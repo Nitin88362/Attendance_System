@@ -9,6 +9,18 @@ const db = require('./config/database');
 
 const app = express();
 
+// Create active column if not exists
+db.query(`
+ALTER TABLE employees
+ADD COLUMN IF NOT EXISTS active TINYINT(1) DEFAULT 1
+`, (err) => {
+    if (err) {
+        console.log("Column check:", err.message);
+    } else {
+        console.log("✅ Active column ready");
+    }
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
