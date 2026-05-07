@@ -40,9 +40,12 @@ router.get('/', authenticateToken, async (req, res) => {
         `, params);
 
         // Get employees
-        const limitNum = parseInt(limit) || 10;
-        const offsetNum = parseInt(offset) || 0;
-        
+        const limitValue = parseInt(limit) || 10;
+        const offsetValue = parseInt(offset) || 0;
+
+        params.push(limitValue);
+        params.push(offsetValue);
+
         const [employees] = await pool.execute(`
             SELECT e.*, d.name as department_name 
             FROM employees e 
@@ -50,7 +53,7 @@ router.get('/', authenticateToken, async (req, res) => {
             ${whereClause}
             ORDER BY e.created_at DESC 
             LIMIT ? OFFSET ?
-        `, [...params, limitNum, offsetNum]);
+        `, params);
 
         // Remove passwords from response
         const employeesWithoutPasswords = employees.map(emp => {
@@ -387,12 +390,12 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
 
         // Active employees
         const [activeResult] = await pool.execute(
-            'SELECT COUNT(*) as active FROM employees WHERE status = "active"'
+            'SELECT COUNT(*) as active FROM employees WHERE active = 1'
         );
 
         // Inactive employees
         const [inactiveResult] = await pool.execute(
-            'SELECT COUNT(*) as inactive FROM employees WHERE status = "inactive"'
+            'SELECT COUNT(*) as inactive FROM employees WHERE active = 0'
         );
 
         // Departments count
@@ -429,12 +432,12 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
 
         // Active employees
         const [activeResult] = await pool.execute(
-            'SELECT COUNT(*) as count FROM employees WHERE status = "active"'
+            'SELECT COUNT(*) as count FROM employees WHERE active = 1'
         );
 
         // Inactive employees
         const [inactiveResult] = await pool.execute(
-            'SELECT COUNT(*) as count FROM employees WHERE status = "inactive"'
+            'SELECT COUNT(*) as count FROM employees WHERE active = 0'
         );
 
         // Total departments

@@ -1,3 +1,5 @@
+process.env.TZ = "Asia/Kolkata";
+
 const express = require('express');
 const path = require('path');
 const bcrypt = require('bcryptjs');
@@ -23,6 +25,21 @@ async function fixDatabase() {
       console.log("✅ active column already exists");
     } else {
       console.log("❌ active column error:", err.message);
+    }
+  }
+
+  try {
+    await db.query(`
+      ALTER TABLE employees
+      ADD COLUMN status VARCHAR(20) DEFAULT 'active'
+    `);
+
+    console.log("✅ status column created");
+  } catch (err) {
+    if (err.message.includes("Duplicate column")) {
+      console.log("✅ status column already exists");
+    } else {
+      console.log("❌ status column error:", err.message);
     }
   }
 }
