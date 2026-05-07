@@ -604,7 +604,10 @@
         // Load today's scans
         async function loadTodayScans() {
             try {
-                const response = await fetch('/api/qr/today-scans', {
+                const employee = JSON.parse(localStorage.getItem("employee"));
+                const employeeId = employee.id;
+
+                const response = await fetch(`/api/attendance/employee/${employeeId}/today`, {
                     headers: { 'Authorization': `Bearer ${employeeToken}` }
                 });
 

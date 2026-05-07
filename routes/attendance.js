@@ -21,7 +21,9 @@ router.get('/', authenticateToken, async (req, res) => {
             employee_id = ''
         } = req.query;
         
-        const offset = (page - 1) * limit;
+        const limitValue = Number.parseInt(req.query.limit) || 20;
+        const pageValue = Number.parseInt(req.query.page) || 1;
+        const offsetValue = (pageValue - 1) * limitValue;
 
         let whereClause = 'WHERE 1=1';
         let params = [];
@@ -85,7 +87,7 @@ router.get('/', authenticateToken, async (req, res) => {
             ${whereClause}
             ORDER BY a.date DESC, e.first_name ASC
             LIMIT ? OFFSET ?
-        `, [...params, parseInt(limit), parseInt(offset)]);
+        `, [...params, limitValue, offsetValue]);
 
         res.json({
             success: true,
@@ -531,6 +533,28 @@ router.post('/qr/scan', authenticateToken, async (req, res) => {
             message: 'Failed to process QR code'
         });
     }
+});
+
+// Get employee's today attendance
+router.get("/employee/:employeeId/today", async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+
+    const [rows] = await pool.execute(
+      `SELECT a.*, e.first_name, e.last_name, e.employee_id
+       FROM attendance a
+       JOIN employees e ON a.employee_id = e.employee_id
+       WHERE a.employee_id = ?
+       AND DATE(a.check_in) = CURDATE()
+       ORDER BY a.check_in DESC`,
+      [employeeId]
+    );
+
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.log("Employee today attendance error:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 module.exports = router;
