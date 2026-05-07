@@ -127,7 +127,7 @@ router.post('/checkin', authenticateToken, [
 
         // Check if attendance already exists for today
         const [existing] = await pool.execute(
-            'SELECT * FROM attendance WHERE employee_id = ? AND date = ?',
+            'SELECT * FROM attendance WHERE employee_id = ? AND DATE(check_in) = ?',
             [employee_id, date]
         );
 
@@ -140,9 +140,9 @@ router.post('/checkin', authenticateToken, [
 
         // Insert check-in record
         const [result] = await pool.execute(`
-            INSERT INTO attendance (employee_id, date, check_in, status)
-            VALUES (?, ?, ?, 'present')
-        `, [employee_id, date, currentTime]);
+            INSERT INTO attendance (employee_id, check_in, status)
+            VALUES (?, ?, 'present')
+        `, [employee_id, `${date} ${currentTime}:00`]);
 
         res.status(201).json({
             success: true,
@@ -179,7 +179,7 @@ router.put('/checkout', authenticateToken, [
 
         // Check if check-in exists
         const [existing] = await pool.execute(
-            'SELECT * FROM attendance WHERE employee_id = ? AND date = ? AND check_in IS NOT NULL',
+            'SELECT * FROM attendance WHERE employee_id = ? AND DATE(check_in) = ? AND check_in IS NOT NULL',
             [employee_id, date]
         );
 
@@ -207,8 +207,8 @@ router.put('/checkout', authenticateToken, [
         const [result] = await pool.execute(`
             UPDATE attendance 
             SET check_out = ?, working_hours = ?
-            WHERE employee_id = ? AND date = ?
-        `, [currentTime, workingHours, employee_id, date]);
+            WHERE employee_id = ? AND DATE(check_in) = ?
+        `, [`${date} ${currentTime}:00`, workingHours, employee_id, date]);
 
         res.json({
             success: true,
@@ -270,19 +270,19 @@ router.get('/today/summary', async (req, res) => {
 
         // Present today
         const [presentResult] = await pool.execute(
-            'SELECT COUNT(*) as present FROM attendance WHERE date = ? AND status = "present"',
+            'SELECT COUNT(*) as present FROM attendance WHERE DATE(check_in) = ? AND status = "present"',
             [today]
         );
 
         // Absent today
         const [absentResult] = await pool.execute(
-            'SELECT COUNT(*) as absent FROM attendance WHERE date = ? AND status = "absent"',
+            'SELECT COUNT(*) as absent FROM attendance WHERE DATE(check_in) = ? AND status = "absent"',
             [today]
         );
 
         // On leave today
         const [leaveResult] = await pool.execute(
-            'SELECT COUNT(*) as on_leave FROM attendance WHERE date = ? AND status = "leave"',
+            'SELECT COUNT(*) as on_leave FROM attendance WHERE DATE(check_in) = ? AND status = "leave"',
             [today]
         );
 
@@ -383,7 +383,7 @@ router.post('/manual', authenticateToken, [
 
         // Check if record already exists
         const [existing] = await pool.execute(
-            'SELECT * FROM attendance WHERE employee_id = ? AND date = ?',
+            'SELECT * FROM attendance WHERE employee_id = ? AND DATE(check_in) = ?',
             [employee_id, date]
         );
 
@@ -399,14 +399,14 @@ router.post('/manual', authenticateToken, [
             await pool.execute(`
                 UPDATE attendance 
                 SET status = ?, check_in = ?, check_out = ?, working_hours = ?, notes = ?
-                WHERE employee_id = ? AND date = ?
-            `, [status, check_in, check_out, workingHours, notes, employee_id, date]);
+                WHERE employee_id = ? AND DATE(check_in) = ?
+            `, [status, check_in ? `${date} ${check_in}:00` : null, check_out ? `${date} ${check_out}:00` : null, workingHours, notes, employee_id, date]);
         } else {
             // Insert new record
             await pool.execute(`
-                INSERT INTO attendance (employee_id, date, status, check_in, check_out, working_hours, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `, [employee_id, date, status, check_in, check_out, workingHours, notes]);
+                INSERT INTO attendance (employee_id, status, check_in, check_out, working_hours, notes)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `, [employee_id, status, check_in ? `${date} ${check_in}:00` : null, check_out ? `${date} ${check_out}:00` : null, workingHours, notes]);
         }
 
         res.json({
@@ -480,7 +480,7 @@ router.post('/qr/scan', authenticateToken, async (req, res) => {
 
         // Check if attendance already exists for today
         const [checkAttendance] = await pool.execute(
-            'SELECT id, check_in_time, check_out_time FROM attendance WHERE employee_id = ? AND DATE(check_in_time) = ?',
+            'SELECT id, check_in, check_out FROM attendance WHERE employee_id = ? AND DATE(check_in) = ?',
             [employee.id, today]
         );
 
@@ -488,9 +488,9 @@ router.post('/qr/scan', authenticateToken, async (req, res) => {
             const attendance = checkAttendance[0];
             
             // If check-in exists but no check-out, mark check-out
-            if (attendance.check_in_time && !attendance.check_out_time) {
+            if (attendance.check_in && !attendance.check_out) {
                 await pool.execute(
-                    'UPDATE attendance SET check_out_time = ? WHERE id = ?',
+                    'UPDATE attendance SET check_out = ? WHERE id = ?',
                     [now.format('YYYY-MM-DD HH:mm:ss'), attendance.id]
                 );
                 
@@ -512,8 +512,8 @@ router.post('/qr/scan', authenticateToken, async (req, res) => {
         const checkInTime = now.format('YYYY-MM-DD HH:mm:ss');
         
         await pool.execute(
-            'INSERT INTO attendance (employee_id, scan_date, check_in_time) VALUES (?, ?, ?)',
-            [employee.id, today, checkInTime]
+            'INSERT INTO attendance (employee_id, check_in, status) VALUES (?, ?, ?)',
+            [employee.id, checkInTime, 'present']
         );
 
         res.json({

@@ -20,7 +20,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
                 COUNT(CASE WHEN a.status = 'absent' THEN 1 END) as absent_today,
                 COUNT(CASE WHEN a.status = 'leave' THEN 1 END) as leave_today
             FROM attendance a 
-            WHERE a.date = ?
+            WHERE DATE(a.check_in) = ?
         `, [today]);
 
         console.log('✅ Today stats:', todayStats[0]);
@@ -46,13 +46,13 @@ router.get('/stats', authenticateToken, async (req, res) => {
         // Get weekly attendance trends
         const [weeklyTrends] = await pool.execute(`
             SELECT 
-                a.date,
+                DATE(a.check_in) as date,
                 COUNT(CASE WHEN a.status = 'present' THEN 1 END) as present,
                 COUNT(CASE WHEN a.status = 'absent' THEN 1 END) as absent
             FROM attendance a
-            WHERE a.date >= ? AND a.date <= ?
-            GROUP BY a.date
-            ORDER BY a.date ASC
+            WHERE DATE(a.check_in) >= ? AND DATE(a.check_in) <= ?
+            GROUP BY DATE(a.check_in)
+            ORDER BY DATE(a.check_in) ASC
         `, [weekStart, today]);
 
         console.log('✅ Weekly trends:', weeklyTrends.length, 'days');
@@ -64,14 +64,14 @@ router.get('/stats', authenticateToken, async (req, res) => {
                 e.first_name,
                 e.last_name,
                 d.name as department_name,
-                a.date,
+                DATE(a.check_in) as date,
                 a.check_in,
                 a.check_out,
                 a.status
             FROM attendance a
             JOIN employees e ON a.employee_id = e.employee_id
             LEFT JOIN departments d ON e.department_id = d.id
-            WHERE a.date = ?
+            WHERE DATE(a.check_in) = ?
             ORDER BY a.check_in DESC
             LIMIT 5
         `, [today]);
