@@ -27,8 +27,8 @@ router.get('/', authenticateToken, async (req, res) => {
         }
 
         if (status) {
-            whereClause += ' AND e.status = ?';
-            params.push(status);
+            whereClause += ' AND e.active = ?';
+            params.push(status === 'active' ? 1 : 0);
         }
 
         // Get total count
@@ -40,20 +40,13 @@ router.get('/', authenticateToken, async (req, res) => {
         `, params);
 
         // Get employees
-        const limitValue = parseInt(limit) || 10;
-        const offsetValue = parseInt(offset) || 0;
+        const pageNum = parseInt(req.query.page) || 1;
+        const limitNum = parseInt(req.query.limit) || 20;
+        const offsetNum = (pageNum - 1) * limitNum;
 
-        params.push(limitValue);
-        params.push(offsetValue);
+        query += ` ORDER BY e.created_at DESC LIMIT ${limitNum} OFFSET ${offsetNum}`;
 
-        const [employees] = await pool.execute(`
-            SELECT e.*, d.name as department_name 
-            FROM employees e 
-            LEFT JOIN departments d ON e.department_id = d.id 
-            ${whereClause}
-            ORDER BY e.created_at DESC 
-            LIMIT ? OFFSET ?
-        `, params);
+        const [employees] = await db.query(query, params);
 
         // Remove passwords from response
         const employeesWithoutPasswords = employees.map(emp => {

@@ -467,10 +467,9 @@
         // Load attendance data
         async function loadAttendanceData() {
             try {
-                const employeeId = localStorage.getItem('employeeId') || sessionStorage.getItem('employeeId');
-                const response = await fetch(`/api/attendance?employee_id=${employeeId}&limit=30`, {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
+                const employee = JSON.parse(localStorage.getItem("employee"));
+                const res = await axios.get(`/api/attendance/employee/${employee.id}/today`);
+                setAttendanceRecords(res.data.data);
 
                 if (response.ok) {
                     const data = await response.json();
