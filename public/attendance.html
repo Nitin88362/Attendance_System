@@ -339,8 +339,26 @@
             }
         }
 
+        // Loading state management
+        function setLoading(isLoading) {
+            const spinner = document.getElementById('loadingSpinner');
+            const table = document.getElementById('attendanceTable');
+            const pagination = document.getElementById('pagination');
+            
+            if (isLoading) {
+                spinner.style.display = 'flex';
+                table.style.display = 'none';
+                pagination.style.display = 'none';
+            } else {
+                spinner.style.display = 'none';
+                table.style.display = 'table';
+                pagination.style.display = 'flex';
+            }
+        }
+
         // Load attendance records
         async function loadAttendance(page = 1, search = '', department = '', status = '', date = '') {
+            setLoading(true);
             try {
                 const params = new URLSearchParams({
                     page: page,
@@ -362,17 +380,14 @@
                 if (data.success) {
                     updateAttendanceTable(data.attendance);
                     updatePagination(data.pagination);
-                    
-                    // Hide loading and show table
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                    document.getElementById('attendanceTable').style.display = 'table';
-                    document.getElementById('pagination').style.display = 'flex';
                 } else {
                     document.getElementById('loadingSpinner').innerHTML = '<p>Error loading attendance. Please refresh.</p>';
                 }
             } catch (error) {
                 console.error('Failed to load attendance:', error);
                 document.getElementById('loadingSpinner').innerHTML = '<p>Error loading attendance. Please refresh.</p>';
+            } finally {
+                setLoading(false);
             }
         }
 

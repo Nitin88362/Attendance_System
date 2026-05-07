@@ -605,17 +605,12 @@
         async function loadTodayScans() {
             try {
                 const employee = JSON.parse(localStorage.getItem("employee"));
-                const employeeId = employee.id;
 
-                const response = await fetch(`/api/attendance/employee/${employeeId}/today`, {
-                    headers: { 'Authorization': `Bearer ${employeeToken}` }
-                });
+                const res = await axios.get(
+                    `/api/attendance/employee/${employee.id}/today`
+                );
 
-                if (response.ok) {
-                    const data = await response.json();
-                    updateStatusInfo(data.scans);
-                    updateRecentScans(data.scans);
-                }
+                setAttendanceRecords(res.data.data);
             } catch (error) {
                 console.error('Load today scans error:', error);
             }

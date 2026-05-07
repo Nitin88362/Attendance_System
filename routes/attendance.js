@@ -21,8 +21,8 @@ router.get('/', authenticateToken, async (req, res) => {
             employee_id = ''
         } = req.query;
         
-        const limitValue = Number.parseInt(req.query.limit) || 20;
-        const pageValue = Number.parseInt(req.query.page) || 1;
+        const pageValue = parseInt(req.query.page) || 1;
+        const limitValue = parseInt(req.query.limit) || 20;
         const offsetValue = (pageValue - 1) * limitValue;
 
         let whereClause = 'WHERE 1=1';
@@ -514,8 +514,8 @@ router.post('/qr/scan', authenticateToken, async (req, res) => {
         const checkInTime = now.format('YYYY-MM-DD HH:mm:ss');
         
         await pool.execute(
-            'INSERT INTO attendance (employee_id, check_in, status) VALUES (?, ?, ?)',
-            [employee.id, checkInTime, 'present']
+            'INSERT INTO attendance (employee_id, check_in, status) VALUES (?, CONVERT_TZ(NOW(), \'+00:00\', \'+05:30\'), ?)',
+            [employee.id, 'present']
         );
 
         res.json({

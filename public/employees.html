@@ -474,8 +474,26 @@
             }
         }
 
+        // Loading state management
+        function setLoading(isLoading) {
+            const spinner = document.getElementById('loadingSpinner');
+            const table = document.getElementById('employeesTable');
+            const pagination = document.getElementById('pagination');
+            
+            if (isLoading) {
+                spinner.style.display = 'flex';
+                table.style.display = 'none';
+                pagination.style.display = 'none';
+            } else {
+                spinner.style.display = 'none';
+                table.style.display = 'table';
+                pagination.style.display = 'flex';
+            }
+        }
+
         // Load employees
         async function loadEmployees(page = 1, search = '', department = '', status = '') {
+            setLoading(true);
             try {
                 const params = new URLSearchParams({
                     page: page,
@@ -496,17 +514,14 @@
                 if (data.success) {
                     updateEmployeeTable(data.employees);
                     updatePagination(data.pagination);
-                    
-                    // Hide loading and show table
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                    document.getElementById('employeesTable').style.display = 'table';
-                    document.getElementById('pagination').style.display = 'flex';
                 } else {
                     document.getElementById('loadingSpinner').innerHTML = '<p>Error loading employees. Please refresh.</p>';
                 }
             } catch (error) {
                 console.error('Failed to load employees:', error);
                 document.getElementById('loadingSpinner').innerHTML = '<p>Error loading employees. Please refresh.</p>';
+            } finally {
+                setLoading(false);
             }
         }
 

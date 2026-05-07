@@ -40,11 +40,14 @@ router.get('/', authenticateToken, async (req, res) => {
         `, params);
 
         // Get employees
-        const pageNum = parseInt(req.query.page) || 1;
-        const limitNum = parseInt(req.query.limit) || 20;
-        const offsetNum = (pageNum - 1) * limitNum;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = (page - 1) * limit;
 
-        query += ` ORDER BY e.created_at DESC LIMIT ${limitNum} OFFSET ${offsetNum}`;
+        query += ` ORDER BY e.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+
+        console.log("Employees Query:", query);
+        console.log("Params:", params);
 
         const [employees] = await db.query(query, params);
 
