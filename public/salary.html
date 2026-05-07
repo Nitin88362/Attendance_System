@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Management | Attendance System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF and Excel Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg-body: #f8fafc;
+            --white: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-dark); padding: 30px; }
+
+        .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
+        .header-left h1 { font-size: 1.8rem; font-weight: 700; }
+        .header-left p { color: var(--text-muted); font-size: 0.95rem; margin-top: 5px; }
+
+        .config-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        .config-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: flex-end; }
+        .field-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+        input, select { padding: 10px 15px; border: 1px solid var(--border); border-radius: 10px; outline: none; }
+
+        .btn { padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; border: none; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+
+        .table-container { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; color: var(--text-muted); font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+
+        .status-paid { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Salary Management</h1>
+            <p>Calculate and manage employee payroll and overtime.</p>
+        </div>
+    </div>
+
+    <div class="config-section">
+        <div class="section-title"><i class="fas fa-cog"></i> Calculation Settings</div>
+        <div class="config-grid">
+            <div class="field-group">
+                <label>Standard Work Start</label>
+                <input type="time" id="workStartTime" value="09:00">
+            </div>
+            <div class="field-group">
+                <label>Standard Work End</label>
+                <input type="time" id="workEndTime" value="17:30">
+            </div>
+            <div class="field-group">
+                <label>Overtime Multiplier (e.g. 1.5)</label>
+                <input type="number" id="otMultiplier" step="0.1" value="1.5">
+            </div>
+            <button class="btn btn-primary" onclick="saveSettings()">Update Settings</button>
+        </div>
+    </div>
+
+    <div class="config-section">
+        <div class="section-title"><i class="fas fa-calculator"></i> Calculate Payroll</div>
+        <div class="config-grid">
+            <div class="field-group">
+                <label>Select Month</label>
+                <select id="calcMonth">
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label>Select Year</label>
+                <select id="calcYear">
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="calculateSalaries()">
+                <i class="fas fa-play"></i> Run Calculation
+            </button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Payroll Report</span>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-export" onclick="exportToExcel()" style="padding: 5px 15px; font-size: 0.8rem; background: #f1f5f9;">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button class="btn btn-export" onclick="exportToPDF()" style="padding: 5px 15px; font-size: 0.8rem; background: #f1f5f9;">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+            </div>
+        </div>
+        <table id="salaryTable">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Base Salary</th>
+                    <th>Total Hours</th>
+                    <th>OT Hours</th>
+                    <th>OT Pay</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="salaryTableBody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Click "Run Calculation" to see results</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+
+        // Redirect if not admin
+        if (!authToken) {
+            window.location.href = '/';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            document.getElementById('calcMonth').value = now.getMonth() + 1;
+            document.getElementById('calcYear').value = now.getFullYear();
+            loadSettings();
+        });
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/salary/settings', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('workStartTime').value = data.settings.work_start_time.substring(0, 5);
+                    document.getElementById('workEndTime').value = data.settings.work_end_time.substring(0, 5);
+                    document.getElementById('otMultiplier').value = data.settings.overtime_rate_multiplier;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function saveSettings() {
+            const payload = {
+                work_start_time: document.getElementById('workStartTime').value + ':00',
+                work_end_time: document.getElementById('workEndTime').value + ':00',
+                overtime_rate_multiplier: document.getElementById('otMultiplier').value
+            };
+            try {
+                const response = await fetch('/api/salary/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.success) alert('Settings updated!');
+            } catch (e) { console.error(e); }
+        }
+
+        async function calculateSalaries() {
+            const month = document.getElementById('calcMonth').value;
+            const year = document.getElementById('calcYear').value;
+            const tbody = document.getElementById('salaryTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;">Calculating...</td></tr>';
+
+            try {
+                const response = await fetch(`/api/salary/calculate?month=${month}&year=${year}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    tbody.innerHTML = '';
+                    if (data.salaries.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;">No records found</td></tr>';
+                        return;
+                    }
+                    data.salaries.forEach(s => {
+                        const row = `
+                            <tr>
+                                <td><strong>${s.name}</strong><br><small>${s.employee_id}</small></td>
+                                <td>₹${s.base_salary}</td>
+                                <td>${s.total_hours}h</td>
+                                <td>${s.overtime_hours}h</td>
+                                <td>₹${s.overtime_pay}</td>
+                                <td style="font-weight: 700; color: var(--primary);">₹${s.total_salary}</td>
+                                <td><span class="status-pending">Pending</span></td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            const table = document.getElementById("salaryTable");
+            const month = document.getElementById('calcMonth').options[document.getElementById('calcMonth').selectedIndex].text;
+            const year = document.getElementById('calcYear').value;
+            const wb = XLSX.utils.table_to_book(table, { sheet: "Payroll" });
+            XLSX.writeFile(wb, `Payroll_Report_${month}_${year}.xlsx`);
+        }
+
+        // Export to PDF
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const month = document.getElementById('calcMonth').options[document.getElementById('calcMonth').selectedIndex].text;
+            const year = document.getElementById('calcYear').value;
+            
+            doc.setFontSize(18);
+            doc.text(`Payroll Report - ${month} ${year}`, 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+            
+            doc.autoTable({
+                html: '#salaryTable',
+                startY: 30,
+                theme: 'grid',
+                headStyles: { fillColor: [37, 99, 235] }
+            });
+            
+            doc.save(`Payroll_Report_${month}_${year}.pdf`);
+        }
+    </script>
+</body>
+</html>

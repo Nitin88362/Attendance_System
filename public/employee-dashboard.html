@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard | Attendance System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --sidebar: #0f172a;
+            --white: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--sidebar); color: white; display: flex; flex-direction: column; padding: 20px; transition: 0.3s; }
+        .logo { font-size: 1.2rem; font-weight: 700; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
+        .nav-item { padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; margin-bottom: 5px; color: #94a3b8; transition: 0.2s; text-decoration: none; }
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        .logout { margin-top: auto; color: #f87171; border-top: 1px solid #1e293b; padding-top: 20px; }
+
+        /* Main Content */
+        .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .user-meta { display: flex; align-items: center; gap: 15px; }
+        .user-meta img { width: 35px; height: 35px; border-radius: 50%; }
+
+        .content-area { padding: 30px; display: none; }
+        .content-area.active { display: block; }
+
+        /* Common Components */
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
+        .stat-box { display: flex; align-items: center; gap: 15px; background: white; padding: 20px; border-radius: 12px; }
+        .icon-circle { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+
+        /* Sections Specific */
+        .qr-box { text-align: center; border: 2px dashed var(--border); padding: 30px; border-radius: 15px; }
+        .qr-box img { width: 180px; margin-bottom: 15px; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .present { background: #dcfce7; color: #166534; }
+        .absent { background: #fee2e2; color: #991b1b; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+        td { padding: 12px; font-size: 0.85rem; border-bottom: 1px solid #f8fafc; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; }
+        .btn { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo"><i class="fas fa-clock"></i> Attendance System</div>
+        <a href="#" class="nav-item active" onclick="showSection('dashboard')"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="/employee-scanner" class="nav-item"><i class="fas fa-qrcode"></i> Scan Attendance</a>
+        <a href="#" class="nav-item" onclick="showSection('my-attendance')"><i class="fas fa-calendar-alt"></i> My Attendance</a>
+        <a href="#" class="nav-item" onclick="showSection('leave')"><i class="fas fa-envelope-open-text"></i> Leave Request</a>
+        <a href="#" class="nav-item" onclick="showSection('salary')"><i class="fas fa-wallet"></i> My Salary</a>
+        <a href="#" class="nav-item" onclick="showSection('profile')"><i class="fas fa-user"></i> Profile</a>
+        <a href="#" class="nav-item logout" onclick="handleLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h3>Welcome back, Nitin Kumar 👋</h3>
+            <div class="user-meta">
+                <span>21 May 2024, Tuesday</span>
+                <img src="https://i.pravatar.cc/150?u=nitin" alt="user">
+                <div><strong>Nitin Kumar</strong><br><small>Employee</small></div>
+            </div>
+        </div>
+
+        <div id="dashboard" class="content-area active">
+            <div class="grid-4">
+                <div class="stat-box"><div class="icon-circle" style="background:#eef2ff;color:#4f46e5;"><i class="fas fa-calendar-check"></i></div><div><p>Present Days</p><h3 id="presentDays">0</h3></div></div>
+                <div class="stat-box"><div class="icon-circle" style="background:#fff1f2;color:#e11d48;"><i class="fas fa-user-times"></i></div><div><p>Absent Days</p><h3 id="absentDays">0</h3></div></div>
+                <div class="stat-box"><div class="icon-circle" style="background:#fffbeb;color:#d97706;"><i class="fas fa-clock"></i></div><div><p>Leave Days</p><h3 id="leaveDays">0</h3></div></div>
+                <div class="stat-box"><div class="icon-circle" style="background:#f0fdf4;color:#16a34a;"><i class="fas fa-money-bill-wave"></i></div><div><p>Total Salary</p><h3 id="totalSalary">₹ 0</h3></div></div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:20px;">
+                <div class="card">
+                    <h4>Mark Attendance</h4><br>
+                    <div class="qr-box">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Attendance" alt="QR">
+                        <p>Scan QR Code to Check-In/Out</p><br>
+                        <button class="btn" onclick="window.location.href='/employee-scanner'"><i class="fas fa-expand"></i> Scan QR Code</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>Today's Status</h4><br>
+                    <div id="todayStatus" style="background:#f0fdf4; padding:15px; border-radius:10px; border-left:4px solid #22c55e;">
+                        <strong style="color:#16a34a;" id="todayStatusText">Loading...</strong><br><small id="todayCheckIn">Checking status...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="scan" class="content-area">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                <div class="card" style="text-align: center; padding: 40px;">
+                    <h3>Scan QR Code</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 30px;">Align the QR code within the frame to mark your attendance</p>
+                    <div style="position: relative; width: 250px; height: 250px; margin: 0 auto; border: 4px solid var(--primary); border-radius: 20px; padding: 20px;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=EmployeeScan" style="width: 100%;">
+                        <div style="position: absolute; top: -10px; left: -10px; width: 40px; height: 40px; border-top: 5px solid var(--primary); border-left: 5px solid var(--primary);"></div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <span class="status-badge present">● QR Code is Active</span>
+                        <h2 style="margin-top: 10px;">08 : 45 : 32</h2>
+                        <small>Seconds remaining</small>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>How it works?</h4><br>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #eef2ff; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary);">1</div>
+                        <p><small><strong>Scan office QR code</strong><br>Use the scan button to open camera.</small></p>
+                    </div>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #eef2ff; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary);">2</div>
+                        <p><small><strong>Mark Attendance</strong><br>Your check-in/out will be marked.</small></p>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <div style="background: #eef2ff; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary);">3</div>
+                        <p><small><strong>Done!</strong><br>Check your history in My Attendance.</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="my-attendance" class="content-area">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                    <h3>Recent Attendance</h3>
+                    <select id="attendanceMonth" style="width:auto;"><option value="">Select Month</option></select>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Working Hours</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Loading attendance data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="leave" class="content-area">
+            <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 25px;">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <h3>Apply for Leave</h3>
+                        <a href="#" style="color: var(--primary); font-size: 0.85rem;">My Leaves</a>
+                    </div><br>
+                    <div class="form-group">
+                        <label>Leave Type</label>
+                        <select><option>Select Leave Type</option><option>Casual Leave</option><option>Sick Leave</option></select>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>From Date</label><input type="date"></div>
+                        <div class="form-group"><label>To Date</label><input type="date"></div>
+                    </div>
+                    <div class="form-group"><label>Reason for Leave</label><textarea rows="4" placeholder="Enter reason..."></textarea></div>
+                    <button class="btn" style="background: var(--primary);">Submit Request</button>
+                </div>
+                <div>
+                    <div class="card" style="border-left: 4px solid #22c55e;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <p>Casual Leave</p><strong>8 Days</strong>
+                        </div>
+                        <small style="color: var(--text-muted);">Available</small>
+                    </div>
+                    <div class="card" style="border-left: 4px solid #f59e0b;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <p>Sick Leave</p><strong>6 Days</strong>
+                        </div>
+                        <small style="color: var(--text-muted);">Available</small>
+                    </div>
+                    <div class="card" style="background: #f8fafc; border: 1px dashed var(--border);">
+                        <p><i class="fas fa-info-circle"></i> <small>Your leave request will be sent to admin for approval.</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="salary" class="content-area">
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 25px;">
+                <div>
+                    <div class="card" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                        <p style="color: #166534;">Total Salary (May 2024)</p>
+                        <h1 style="color: #166534; font-size: 2.5rem;">₹ 24,750</h1>
+                        <small>Expected Salary</small>
+                        <img src="https://cdn-icons-png.flaticon.com/512/2489/2489756.png" style="width: 60px; float: right; margin-top: -40px; opacity: 0.2;">
+                    </div>
+                    <div class="card">
+                        <h4>Salary History</h4><br>
+                        <table>
+                            <thead><tr><th>Month</th><th>Amount</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <tr><td>April 2024</td><td>₹ 24,500</td><td><span class="status-badge present">Paid</span></td></tr>
+                                <tr><td>March 2024</td><td>₹ 24,500</td><td><span class="status-badge present">Paid</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>Salary Breakdown</h4><br>
+                    <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        <span>Basic Salary</span><strong>₹ 20,000</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        <span>Attendance Allowance</span><strong>₹ 2,000</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        <span>Other Allowance</span><strong>₹ 3,000</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px 0; color: #ef4444;">
+                        <span>Total Deductions</span><strong>- ₹ 250</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 20px 0; font-size: 1.2rem; color: #166534;">
+                        <strong>Net Pay</strong><strong>₹ 24,750</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="profile" class="content-area">
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 30px;">
+                    <div style="position: relative;">
+                        <img id="profileImage" src="https://i.pravatar.cc/150?u=nitin" style="width: 120px; height: 120px; border-radius: 20px; object-fit: cover;">
+                        <div style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid white;" onclick="document.getElementById('imageUpload').click()">
+                            <i class="fas fa-camera" style="font-size: 14px;"></i>
+                        </div>
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="updateProfileImage(event)">
+                    </div>
+                    <div>
+                        <h2>Nitin Kumar</h2>
+                        <p style="color: var(--text-muted);">EMP001 | IT Department</p>
+                        <div style="margin-top: 10px;">
+                            <span class="status-badge present">Software Developer</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                    <div>
+                        <h4 style="color: var(--primary); margin-bottom: 20px;">Personal Information</h4>
+                        <div class="form-group"><label>Full Name</label><input type="text" id="fullName" value="Nitin Kumar"></div>
+                        <div class="form-group"><label>Email ID</label><input type="email" id="email" value="nitin.kumar@example.com"></div>
+                        <div class="form-group"><label>Phone Number</label><input type="tel" id="phone" value="+91 9876543210"></div>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--primary); margin-bottom: 20px;">Work Information</h4>
+                        <div class="form-group"><label>Employee ID</label><input type="text" id="employeeId" value="EMP001" readonly></div>
+                        <div class="form-group"><label>Department</label><input type="text" id="department" value="IT Department" readonly></div>
+                        <div class="form-group"><label>Date of Joining</label><input type="text" id="joiningDate" value="01 Jan 2024" readonly></div>
+                    </div>
+                </div>
+                <br>
+                <button class="btn" style="width: 200px;" onclick="updateProfile()">Update Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(id) {
+            // Hide all sections
+            document.querySelectorAll('.content-area').forEach(sec => sec.classList.remove('active'));
+            // Remove active class from nav
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            
+            // Show selected section
+            document.getElementById(id).classList.add('active');
+            // Find the clicked link and add active class
+            event.currentTarget.classList.add('active');
+        }
+
+        // Update profile image function
+        async function updateProfileImage(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const base64Image = e.target.result;
+                    
+                    try {
+                        const response = await fetch('/api/employees/profile/update', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${authToken}`
+                            },
+                            body: JSON.stringify({
+                                profile_image: base64Image
+                            })
+                        });
+
+                        if (response.ok) {
+                            document.getElementById('profileImage').src = base64Image;
+                            const headerImg = document.querySelector('.user-meta img');
+                            if (headerImg) headerImg.src = base64Image;
+                            showNotification('Profile picture updated successfully!');
+                        } else {
+                            showNotification('Failed to save profile picture', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error saving image:', error);
+                        showNotification('Error saving image', 'error');
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                showNotification('Please select a valid image file', 'error');
+            }
+        }
+
+        // Handle logout
+        function handleLogout(event) {
+            event.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('employeeToken');
+                localStorage.removeItem('employeeId');
+                localStorage.removeItem('employeeUser');
+                sessionStorage.removeItem('employeeToken');
+                sessionStorage.removeItem('employeeId');
+                sessionStorage.removeItem('employeeUser');
+                window.location.href = '/employee-login';
+            }
+        }
+
+        // Load saved profile image and real data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedImage = localStorage.getItem('employeeProfileImage');
+            if (savedImage) {
+                document.getElementById('profileImage').src = savedImage;
+                const headerImg = document.querySelector('.user-meta img');
+                if (headerImg) {
+                    headerImg.src = savedImage;
+                }
+            }
+            
+            // Load real employee data
+            loadEmployeeData();
+            loadDashboardStats();
+            loadAttendanceData();
+            loadLeaveBalance();
+        });
+
+        // Global variables
+        let currentEmployee = null;
+        let authToken = localStorage.getItem('employeeToken') || sessionStorage.getItem('employeeToken');
+        let employeeId = localStorage.getItem('employeeId') || sessionStorage.getItem('employeeId');
+
+        // Check authentication
+        if (!authToken) {
+            window.location.href = '/employee-login';
+        }
+
+        // Load employee data
+        async function loadEmployeeData() {
+            try {
+                if (!employeeId) return;
+                
+                const response = await fetch(`/api/employees/${employeeId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        currentEmployee = data.employee;
+                        updateEmployeeInfo();
+                    }
+                }
+            } catch (error) {
+                console.log('Using demo employee data');
+                // Fallback to demo data
+                currentEmployee = {
+                    employee_id: 'EMP001',
+                    first_name: 'Rahul',
+                    last_name: 'Sharma',
+                    designation: 'Software Developer'
+                };
+                updateEmployeeInfo();
+            }
+        }
+
+        // Update employee info in UI
+        function updateEmployeeInfo() {
+            if (currentEmployee) {
+                document.querySelector('.user-meta strong').textContent = 
+                    `${currentEmployee.first_name} ${currentEmployee.last_name}`;
+                document.querySelector('.user-meta small').textContent = 
+                    currentEmployee.designation || 'Employee';
+                document.querySelector('.header h3').textContent = 
+                    `Welcome back, ${currentEmployee.first_name} ${currentEmployee.last_name} 👋`;
+                
+                // Update profile image if exists
+                if (currentEmployee.profile_image) {
+                    document.getElementById('profileImage').src = currentEmployee.profile_image;
+                    const headerImg = document.querySelector('.user-meta img');
+                    if (headerImg) headerImg.src = currentEmployee.profile_image;
+                }
+                
+                // Update profile section fields
+                document.getElementById('fullName').value = 
+                    `${currentEmployee.first_name} ${currentEmployee.last_name}`;
+                document.getElementById('email').value = currentEmployee.email || '';
+                document.getElementById('phone').value = currentEmployee.phone || '';
+                document.getElementById('employeeId').value = currentEmployee.employee_id || '';
+                document.getElementById('department').value = currentEmployee.department || 'IT Department';
+                document.getElementById('joiningDate').value = currentEmployee.date_of_joining || '01 Jan 2024';
+                
+                // Update profile header
+                document.querySelector('#profile h2').textContent = 
+                    `${currentEmployee.first_name} ${currentEmployee.last_name}`;
+                document.querySelector('#profile p').textContent = 
+                    `${currentEmployee.employee_id} | ${currentEmployee.department || 'IT Department'}`;
+            }
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard/employee-stats', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        updateDashboardStats(data.stats);
+                    }
+                }
+            } catch (error) {
+                console.log('Using demo stats data');
+                // Fallback to calculated stats
+                calculateDemoStats();
+            }
+        }
+
+        // Update dashboard stats in UI
+        function updateDashboardStats(stats) {
+            document.getElementById('presentDays').textContent = stats.present_days || 0;
+            document.getElementById('absentDays').textContent = stats.absent_days || 0;
+            document.getElementById('leaveDays').textContent = stats.leave_days || 0;
+            document.getElementById('totalSalary').textContent = `₹ ${stats.salary || 25000}`;
+            
+            // Update today's status
+            updateTodayStatus(stats.today_status);
+        }
+
+        // Calculate demo stats
+        async function calculateDemoStats() {
+            try {
+                if (!employeeId) return;
+                
+                const response = await fetch(`/api/attendance?employee_id=${employeeId}&limit=30`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const attendance = data.attendance || [];
+                        const present = attendance.filter(a => a.status === 'present').length;
+                        const absent = attendance.filter(a => a.status === 'absent').length;
+                        const leave = attendance.filter(a => a.status === 'leave').length;
+                        
+                        document.getElementById('presentDays').textContent = present;
+                        document.getElementById('absentDays').textContent = absent;
+                        document.getElementById('leaveDays').textContent = leave;
+                        document.getElementById('totalSalary').textContent = '₹ 25,000';
+                        
+                        // Update today's status
+                        const today = new Date().toISOString().split('T')[0];
+                        const todayRecord = attendance.find(a => a.date === today);
+                        updateTodayStatus(todayRecord);
+                    }
+                }
+            } catch (error) {
+                // Final fallback
+                document.getElementById('presentDays').textContent = '18';
+                document.getElementById('absentDays').textContent = '2';
+                document.getElementById('leaveDays').textContent = '3';
+                document.getElementById('totalSalary').textContent = '₹ 25,000';
+                updateTodayStatus({status: 'present', check_in: '09:15:00'});
+            }
+        }
+
+        // Update today's status
+        function updateTodayStatus(todayRecord) {
+            const statusElement = document.getElementById('todayStatus');
+            const statusText = document.getElementById('todayStatusText');
+            const checkInText = document.getElementById('todayCheckIn');
+            
+            if (todayRecord) {
+                if (todayRecord.status === 'present') {
+                    statusText.textContent = 'Present';
+                    checkInText.textContent = todayRecord.check_in ? 
+                        `Checked-In at ${todayRecord.check_in}` : 'Status: Present';
+                    statusElement.style.background = '#f0fdf4';
+                    statusElement.style.borderLeftColor = '#22c55e';
+                    statusText.style.color = '#16a34a';
+                } else if (todayRecord.status === 'absent') {
+                    statusText.textContent = 'Absent';
+                    checkInText.textContent = 'No check-in recorded';
+                    statusElement.style.background = '#fef2f2';
+                    statusElement.style.borderLeftColor = '#ef4444';
+                    statusText.style.color = '#dc2626';
+                } else if (todayRecord.status === 'leave') {
+                    statusText.textContent = 'On Leave';
+                    checkInText.textContent = 'Leave day';
+                    statusElement.style.background = '#fefce8';
+                    statusElement.style.borderLeftColor = '#eab308';
+                    statusText.style.color = '#ca8a04';
+                }
+            } else {
+                statusText.textContent = 'Not Marked';
+                checkInText.textContent = 'No attendance recorded today';
+                statusElement.style.background = '#f8fafc';
+                statusElement.style.borderLeftColor = '#94a3b8';
+                statusText.style.color = '#64748b';
+            }
+        }
+
+        // Load attendance data
+        async function loadAttendanceData() {
+            try {
+                if (!employeeId) return;
+                
+                const response = await fetch(`/api/attendance?employee_id=${employeeId}&limit=30`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        updateAttendanceTable(data.attendance || []);
+                    }
+                }
+            } catch (error) {
+                console.log('Using demo attendance data');
+                // Demo data
+                const demoAttendance = [
+                    { date: '2024-04-27', check_in: '09:15:00', check_out: null, working_hours: 0, status: 'present' },
+                    { date: '2024-04-26', check_in: '09:05:00', check_out: '18:10:00', working_hours: 9.08, status: 'present' },
+                    { date: '2024-04-25', check_in: null, check_out: null, working_hours: 0, status: 'absent' }
+                ];
+                updateAttendanceTable(demoAttendance);
+            }
+        }
+
+        // Update attendance table
+        function updateAttendanceTable(attendance) {
+            const tbody = document.getElementById('attendanceTableBody');
+            
+            if (attendance.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No attendance records found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = attendance.map(record => {
+                const statusClass = record.status === 'present' ? 'present' : 
+                                   record.status === 'absent' ? 'absent' : 'present';
+                const statusText = record.status.charAt(0).toUpperCase() + record.status.slice(1);
+                
+                return `
+                    <tr>
+                        <td><strong>${formatDate(record.date)}</strong></td>
+                        <td>${record.check_in || '--'}</td>
+                        <td>${record.check_out || '--'}</td>
+                        <td>${record.working_hours ? `${record.working_hours}h` : '--'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Load leave balance
+        async function loadLeaveBalance() {
+            try {
+                if (!employeeId) return;
+                
+                const response = await fetch(`/api/leaves/balance/${employeeId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        updateLeaveBalance(data.balance);
+                    }
+                }
+            } catch (error) {
+                console.log('Using demo leave balance');
+                // Demo data
+                updateLeaveBalance({
+                    casual: 8,
+                    sick: 6,
+                    annual: 12
+                });
+            }
+        }
+
+        // Update leave balance
+        function updateLeaveBalance(balance) {
+            // Update leave balance cards if they exist
+            const casualElement = document.querySelector('.card:has(p[textContent="Casual Leave"]) strong');
+            const sickElement = document.querySelector('.card:has(p[textContent="Sick Leave"]) strong');
+            
+            if (casualElement) casualElement.textContent = `${balance.casual || 8} Days`;
+            if (sickElement) sickElement.textContent = `${balance.sick || 6} Days`;
+        }
+
+        // Format date helper
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+        }
+
+        // Update profile function
+        async function updateProfile() {
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            
+            // Validate inputs
+            if (!fullName || !email || !phone) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            // Validate email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            // Validate phone
+            const phoneRegex = /^[\+]?[0-9]{10,15}$/;
+            if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+                showNotification('Please enter a valid phone number', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/employees/profile/update', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        first_name: fullName.split(' ')[0],
+                        last_name: fullName.split(' ').slice(1).join(' ') || '',
+                        email: email,
+                        phone: phone
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showNotification('Profile updated successfully!');
+                        
+                        // Update current employee data
+                        currentEmployee.first_name = fullName.split(' ')[0];
+                        currentEmployee.last_name = fullName.split(' ').slice(1).join(' ') || '';
+                        currentEmployee.email = email;
+                        currentEmployee.phone = phone;
+                        
+                        // Update UI
+                        updateEmployeeInfo();
+                        
+                        // Update header
+                        document.querySelector('.user-meta strong').textContent = fullName;
+                        document.querySelector('.header h3').textContent = `Welcome back, ${fullName} 👋`;
+                        
+                    } else {
+                        showNotification(data.message || 'Failed to update profile', 'error');
+                    }
+                } else {
+                    showNotification('Failed to update profile', 'error');
+                }
+            } catch (error) {
+                console.log('Profile update error:', error);
+                // For demo, show success and update locally
+                showNotification('Profile updated successfully! (Demo Mode)');
+                
+                // Update current employee data locally
+                currentEmployee.first_name = fullName.split(' ')[0];
+                currentEmployee.last_name = fullName.split(' ').slice(1).join(' ') || '';
+                currentEmployee.email = email;
+                currentEmployee.phone = phone;
+                
+                // Update UI
+                updateEmployeeInfo();
+                document.querySelector('.user-meta strong').textContent = fullName;
+                document.querySelector('.header h3').textContent = `Welcome back, ${fullName} 👋`;
+            }
+        }
+
+        // Show notification function
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#22c55e' : '#ef4444'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                z-index: 1000;
+                font-size: 14px;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

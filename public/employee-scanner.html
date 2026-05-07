@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Attendance | Attendance System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --sidebar: #0f172a;
+            --white: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { 
+            width: 260px; 
+            background: var(--sidebar); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px; 
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .logo { font-size: 1.2rem; font-weight: 700; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
+        .nav-item { 
+            padding: 12px 15px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-bottom: 5px; 
+            color: #94a3b8; 
+            transition: 0.2s; 
+            text-decoration: none; 
+        }
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        .logout { margin-top: auto; color: #f87171; border-top: 1px solid #1e293b; padding-top: 20px; }
+
+        /* Main Content */
+        .main { 
+            margin-left: 260px;
+            flex: 1; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
+        .header { 
+            background: white; 
+            padding: 20px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border); 
+        }
+        
+        .user-meta { display: flex; align-items: center; gap: 15px; }
+        .user-meta img { width: 35px; height: 35px; border-radius: 50%; }
+
+        .content { padding: 30px; flex: 1; display: flex; flex-direction: column; }
+
+        /* Scanner Container */
+        .scanner-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .scanner-area {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            border: 3px solid var(--primary);
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .scanner-area video {
+            display: block;
+            width: 100%;
+            height: auto;
+            min-height: 400px;
+        }
+
+        .scanner-area canvas {
+            display: none;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #22c55e, transparent);
+            animation: scanLine 2s infinite;
+        }
+
+        @keyframes scanLine {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--success);
+        }
+
+        .corner.top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+        .corner.top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+        .corner.bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+        .corner.bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+
+        .scanner-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+
+        /* Status Messages */
+        .status-message {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            display: block;
+        }
+
+        .status-message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            display: block;
+        }
+
+        /* QR Info */
+        .qr-info {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .qr-info p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .qr-info strong {
+            color: var(--text-dark);
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .info-card h4 {
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .info-card p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Recent Scans */
+        .recent-scans {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .scan-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .scan-item:last-child {
+            border-bottom: none;
+        }
+
+        .scan-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .scan-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .scan-time {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+
+        .timer {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 10px;
+        }
+
+        .permission-denied {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: #fee2e2;
+            border-radius: 12px;
+            color: #991b1b;
+        }
+
+        .permission-denied.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo"><i class="fas fa-clock"></i> Attendance</div>
+        <a href="/employee-dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="/employee-scanner" class="nav-item active"><i class="fas fa-qrcode"></i> Scan Attendance</a>
+        <a href="/employee-attendance" class="nav-item"><i class="fas fa-calendar-alt"></i> My Attendance</a>
+        <a href="/employee-leaves" class="nav-item"><i class="fas fa-envelope-open-text"></i> Leave Request</a>
+        <a href="/employee-profile" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+        <div class="nav-item logout" onclick="logout()" style="cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h3>QR Code Scanner</h3>
+            <div class="user-meta">
+                <span id="currentTime">--:--:-- --</span>
+                <img id="userAvatar" src="https://ui-avatars.com/api/?name=Employee&background=random" alt="user">
+                <div id="userInfo">
+                    <strong>Employee</strong><br>
+                    <small>Loading...</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="scanner-container">
+                <h2 style="margin-bottom: 10px; color: var(--text-dark);">Scan QR Code</h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">
+                    Position the QR code within the frame to mark your attendance
+                </p>
+
+                <!-- Permission Denied Message -->
+                <div class="permission-denied" id="permissionDenied">
+                    <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                    <h3>Camera Permission Denied</h3>
+                    <p style="margin-top: 10px; margin-bottom: 20px;">
+                        Please allow camera access in your browser settings to use the scanner.
+                    </p>
+                    <button class="btn btn-primary" onclick="requestCameraPermission()">
+                        <i class="fas fa-camera"></i> Request Permission Again
+                    </button>
+                </div>
+
+                <!-- Scanner -->
+                <div class="scanner-area" id="scannerArea" style="display: none;">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="canvas"></canvas>
+                    <div class="scanner-overlay">
+                        <div class="scanner-line" id="scannerLine"></div>
+                        <div class="corner top-left"></div>
+                        <div class="corner top-right"></div>
+                        <div class="corner bottom-left"></div>
+                        <div class="corner bottom-right"></div>
+                    </div>
+                </div>
+
+                <div class="qr-info" id="qrInfo" style="display: none;">
+                    <p><strong>QR Code Status:</strong> <span id="qrStatus" style="color: var(--success);">Active</span></p>
+                    <p><strong>Expires in:</strong> <span id="qrTimer">60</span> seconds</p>
+                    <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+                        <i class="fas fa-info-circle"></i> A new QR code is generated every minute
+                    </p>
+                </div>
+
+                <div class="status-message" id="statusMessage"></div>
+
+                <div class="scanner-controls">
+                    <button class="btn btn-primary" onclick="startScanner()" id="startBtn">
+                        <i class="fas fa-play"></i> Start Scanner
+                    </button>
+                    <button class="btn btn-danger" onclick="stopScanner()" id="stopBtn" style="display: none;">
+                        <i class="fas fa-stop"></i> Stop Scanner
+                    </button>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4><i class="fas fa-clock"></i> Today's Status</h4>
+                    <p id="todayStatus">Not checked in yet</p>
+                </div>
+                <div class="info-card">
+                    <h4><i class="fas fa-stopwatch"></i> Check-in Time</h4>
+                    <p id="checkInTime">-</p>
+                </div>
+                <div class="info-card">
+                    <h4><i class="fas fa-hourglass-end"></i> Check-out Time</h4>
+                    <p id="checkOutTime">-</p>
+                </div>
+            </div>
+
+            <div class="recent-scans" id="recentScansContainer" style="display: none; margin-top: 30px;">
+                <h3 style="margin-bottom: 20px;">Today's Attendance Record</h3>
+                <div id="recentScansList">
+                    <p style="text-align: center; color: var(--text-muted);">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let employeeToken;
+        let employeeId;
+        let scannerActive = false;
+        let currentQRData;
+        let qrTimerInterval;
+        let currentTimeInterval;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            employeeToken = localStorage.getItem('employeeToken') || sessionStorage.getItem('employeeToken');
+            employeeId = localStorage.getItem('employeeId') || sessionStorage.getItem('employeeId');
+
+            if (!employeeToken || !employeeId) {
+                window.location.href = '/employee-login';
+                return;
+            }
+
+            // Get employee info
+            await loadEmployeeInfo();
+            updateDateTime();
+            currentTimeInterval = setInterval(updateDateTime, 1000);
+            
+            // Load today's scans
+            await loadTodayScans();
+            
+            // Start QR timer
+            startQRTimer();
+        });
+
+        // Load employee information
+        async function loadEmployeeInfo() {
+            try {
+                const response = await fetch(`/api/employees/${employeeId}`, {
+                    headers: { 'Authorization': `Bearer ${employeeToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const emp = data.employee;
+                    
+                    document.getElementById('userAvatar').src = 
+                        `https://ui-avatars.com/api/?name=${emp.first_name}+${emp.last_name}&background=random`;
+                    document.getElementById('userInfo').innerHTML = 
+                        `<strong>${emp.first_name} ${emp.last_name}</strong><br><small>${emp.designation || 'Employee'}</small>`;
+                }
+            } catch (error) {
+                console.error('Load employee info error:', error);
+            }
+        }
+
+        // Request camera permission
+        async function requestCameraPermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                document.getElementById('permissionDenied').classList.remove('show');
+                document.getElementById('scannerArea').style.display = 'block';
+                document.getElementById('qrInfo').style.display = 'block';
+                
+                // Stop the stream for now
+                // stream.getTracks().forEach(track => track.stop());
+                
+                // Start scanner automatically if permission is granted
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                scannerActive = true;
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'flex';
+                scanQRCode();
+                
+                showMessage('Camera permission granted! Scanner started.', 'success');
+            } catch (error) {
+                console.error('Camera permission error:', error);
+                document.getElementById('permissionDenied').classList.add('show');
+                showMessage('Camera permission denied. Please enable it in settings.', 'error');
+            }
+        }
+
+        // Start scanner
+        async function startScanner() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                
+                scannerActive = true;
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'flex';
+
+                showMessage('Scanner started. Position QR code in frame.', 'info');
+
+                // Start scanning
+                scanQRCode();
+            } catch (error) {
+                console.error('Camera error:', error);
+                requestCameraPermission();
+            }
+        }
+
+        // Stop scanner
+        function stopScanner() {
+            scannerActive = false;
+            const video = document.getElementById('video');
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+
+            document.getElementById('startBtn').style.display = 'flex';
+            document.getElementById('stopBtn').style.display = 'none';
+            showMessage('Scanner stopped.', 'info');
+        }
+
+        // Scan QR code
+        function scanQRCode() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            function scan() {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                    if (code && code.data) {
+                        if (code.data.includes('ATTENDANCE-')) {
+                            handleQRScanned(code.data);
+                            stopScanner();
+                            return;
+                        }
+                    }
+                }
+
+                if (scannerActive) {
+                    requestAnimationFrame(scan);
+                }
+            }
+
+            scan();
+        }
+
+        // Handle scanned QR code
+        async function handleQRScanned(qrData) {
+            try {
+                // Extract token from QR data
+                // Format: ATTENDANCE-<token>
+                const token = qrData.replace('ATTENDANCE-', '');
+
+                const response = await fetch('/api/qr/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${employeeToken}`
+                    },
+                    body: JSON.stringify({
+                        qrToken: token,
+                        employeeId: employeeId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(
+                        `✅ ${data.attendance.employeeName} - ${data.attendance.type === 'checkin' ? 'Checked In' : 'Checked Out'} at ${data.attendance.time}`,
+                        'success'
+                    );
+
+                    // Update status
+                    await loadTodayScans();
+                } else {
+                    showMessage(`❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('QR verify error:', error);
+                showMessage('Error processing QR code. Please try again.', 'error');
+            }
+        }
+
+        // Load today's scans
+        async function loadTodayScans() {
+            try {
+                const response = await fetch('/api/qr/today-scans', {
+                    headers: { 'Authorization': `Bearer ${employeeToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatusInfo(data.scans);
+                    updateRecentScans(data.scans);
+                }
+            } catch (error) {
+                console.error('Load today scans error:', error);
+            }
+        }
+
+        // Update status info
+        function updateStatusInfo(scans) {
+            const myScans = scans.filter(s => s.employeeId === employeeId);
+
+            if (myScans.length === 0) {
+                document.getElementById('todayStatus').innerHTML = '<span style="color: var(--warning);">Not checked in</span>';
+                document.getElementById('checkInTime').innerHTML = '-';
+                document.getElementById('checkOutTime').innerHTML = '-';
+                return;
+            }
+
+            const latestScan = myScans[0];
+
+            if (latestScan.checkOut) {
+                document.getElementById('todayStatus').innerHTML = '<span style="color: var(--success);">Checked Out</span>';
+                document.getElementById('checkOutTime').innerHTML = latestScan.checkOut;
+            } else {
+                document.getElementById('todayStatus').innerHTML = '<span style="color: var(--success);">Checked In</span>';
+            }
+
+            document.getElementById('checkInTime').innerHTML = latestScan.checkIn;
+        }
+
+        // Update recent scans display
+        function updateRecentScans(scans) {
+            const container = document.getElementById('recentScansContainer');
+            const list = document.getElementById('recentScansList');
+
+            if (scans.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No attendance records today</p>';
+                return;
+            }
+
+            container.style.display = 'block';
+            list.innerHTML = scans.map(scan => `
+                <div class="scan-item">
+                    <div class="scan-left">
+                        <img src="${scan.avatar}" alt="${scan.employeeName}" class="scan-avatar">
+                        <div>
+                            <div><strong>${scan.employeeName}</strong></div>
+                            <div class="scan-time">${scan.employeeId}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div style="text-align: right;">
+                            <p style="font-size: 0.9rem;"><strong>${scan.checkIn}</strong></p>
+                            ${scan.checkOut ? `<p style="font-size: 0.85rem; color: var(--text-muted);">Out: ${scan.checkOut}</p>` : ''}
+                        </div>
+                        <span class="badge badge-success">${scan.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Start QR timer
+        function startQRTimer() {
+            let secondsRemaining = 60;
+
+            qrTimerInterval = setInterval(() => {
+                secondsRemaining--;
+
+                if (secondsRemaining <= 0) {
+                    secondsRemaining = 60;
+                }
+
+                document.getElementById('qrTimer').textContent = secondsRemaining;
+            }, 1000);
+        }
+
+        // Update date and time
+        function updateDateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // Show message
+        function showMessage(message, type = 'info') {
+            const messageEl = document.getElementById('statusMessage');
+            messageEl.textContent = message;
+            messageEl.className = `status-message ${type}`;
+            messageEl.style.display = 'block';
+
+            if (type !== 'error') {
+                setTimeout(() => {
+                    messageEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('employeeToken');
+                localStorage.removeItem('employeeId');
+                sessionStorage.removeItem('employeeToken');
+                sessionStorage.removeItem('employeeId');
+                window.location.href = '/employee-login';
+            }
+        }
+
+        // Request camera on load
+        window.addEventListener('load', requestCameraPermission);
+    </script>
+</body>
+</html>

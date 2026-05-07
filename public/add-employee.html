@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Employee | Attendance System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-blue: #2563eb;
+            --bg-body: #f8fafc;
+            --white: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --label-star: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); padding: 40px; color: var(--text-dark); }
+
+        .page-header { margin-bottom: 30px; }
+        .page-header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; }
+        .breadcrumb { font-size: 0.85rem; color: var(--text-muted); }
+        .breadcrumb span { color: var(--primary-blue); font-weight: 500; }
+
+        .form-container { display: flex; flex-direction: column; gap: 25px; max-width: 1300px; margin: 0 auto; }
+
+        /* Card Section */
+        .form-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .section-icon {
+            width: 45px;
+            height: 45px;
+            background: #eff6ff;
+            color: var(--primary-blue);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .section-title h2 { font-size: 1.1rem; font-weight: 700; }
+        .section-title p { font-size: 0.85rem; color: var(--text-muted); }
+
+        /* Grid Layout */
+        .inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .work-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .field-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-dark); }
+        label span { color: var(--label-star); }
+
+        input, select {
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        input:focus, select:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+
+        .pass-input { position: relative; }
+        .pass-input i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; }
+
+        /* Top Double Section Layout */
+        .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+
+        /* Action Buttons */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 10px;
+            padding-bottom: 40px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-cancel { background: white; border: 1px solid var(--border); color: var(--text-dark); }
+        .btn-save { background: var(--primary-blue); color: white; }
+        .btn-save:hover { background: #1d4ed8; transform: translateY(-2px); }
+        .btn-save:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+        /* Loading */
+        .loading {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        @media (max-width: 900px) {
+            .inputs-grid, .top-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <h1 id="pageTitle">Add Employee</h1>
+        <p class="breadcrumb">Dashboard > Employees > <span id="breadcrumbText">Add Employee</span></p>
+    </div>
+
+    <div class="alert alert-error" id="errorAlert"></div>
+    <div class="alert alert-success" id="successAlert"></div>
+
+    <form class="form-container" id="addEmployeeForm">
+        <div class="top-row">
+            <section class="form-section">
+                <div class="section-header">
+                    <div class="section-icon"><i class="fas fa-user"></i></div>
+                    <div class="section-title">
+                        <h2>Personal Information</h2>
+                        <p>Enter basic details of the employee.</p>
+                    </div>
+                </div>
+                <div class="inputs-grid work-grid">
+                    <div class="field-group">
+                        <label>First Name <span>*</span></label>
+                        <input type="text" id="firstName" placeholder="Enter first name" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Last Name <span>*</span></label>
+                        <input type="text" id="lastName" placeholder="Enter last name" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Employee ID <span>*</span></label>
+                        <input type="text" id="employeeId" placeholder="Enter employee ID" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Email Address <span>*</span></label>
+                        <input type="email" id="email" placeholder="Enter email address" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Phone Number <span>*</span></label>
+                        <input type="text" id="phone" placeholder="Enter phone number" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Date of Birth <span>*</span></label>
+                        <input type="date" id="dateOfBirth" required>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <div class="section-header">
+                    <div class="section-icon"><i class="fas fa-briefcase"></i></div>
+                    <div class="section-title">
+                        <h2>Work Information</h2>
+                        <p>Enter employment and job related details.</p>
+                    </div>
+                </div>
+                <div class="inputs-grid work-grid">
+                    <div class="field-group">
+                        <label>Department <span>*</span></label>
+                        <select id="department" required>
+                            <option value="">Select department</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Designation <span>*</span></label>
+                        <input type="text" id="designation" placeholder="Enter designation" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Date of Joining <span>*</span></label>
+                        <input type="date" id="dateOfJoining" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Employee Type <span>*</span></label>
+                        <select id="employeeType" required>
+                            <option value="">Select type</option>
+                            <option value="permanent">Permanent</option>
+                            <option value="contract">Contract</option>
+                            <option value="intern">Intern</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Reporting Manager</label>
+                        <input type="text" id="reportingManager" placeholder="Enter manager name">
+                    </div>
+                    <div class="field-group">
+                        <label>Work Location</label>
+                        <input type="text" id="workLocation" placeholder="Enter work location">
+                    </div>
+                    <div class="field-group">
+                        <label>Base Salary (Monthly) <span>*</span></label>
+                        <input type="number" id="baseSalary" placeholder="e.g. 25000" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Hourly Rate (for OT) <span>*</span></label>
+                        <input type="number" id="hourlyRate" placeholder="e.g. 150" required>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section class="form-section">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="section-title">
+                    <h2>Account Information</h2>
+                    <p>Set login credentials for the employee.</p>
+                </div>
+            </div>
+            <div class="inputs-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="field-group">
+                    <label>Username <span>*</span></label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="field-group">
+                    <label>Password <span>*</span></label>
+                    <div class="pass-input">
+                        <input type="password" id="password" placeholder="Enter password" required>
+                        <i class="far fa-eye" id="togglePassword"></i>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>Confirm Password <span>*</span></label>
+                    <div class="pass-input">
+                        <input type="password" id="confirmPassword" placeholder="Confirm password" required>
+                        <i class="far fa-eye" id="toggleConfirmPassword"></i>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>Status <span>*</span></label>
+                    <select id="status" required>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="on_leave">On Leave</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="section-title">
+                    <h2>Address Information</h2>
+                    <p>Enter employee address details.</p>
+                </div>
+            </div>
+            <div class="inputs-grid">
+                <div class="field-group">
+                    <label>Address Line 1 <span>*</span></label>
+                    <input type="text" id="addressLine1" placeholder="Enter address line 1" required>
+                </div>
+                <div class="field-group">
+                    <label>Address Line 2</label>
+                    <input type="text" id="addressLine2" placeholder="Enter address line 2">
+                </div>
+                <div class="field-group">
+                    <label>City <span>*</span></label>
+                    <input type="text" id="city" placeholder="Enter city" required>
+                </div>
+                <div class="field-group">
+                    <label>State <span>*</span></label>
+                    <input type="text" id="state" placeholder="Enter state" required>
+                </div>
+                <div class="field-group">
+                    <label>ZIP / Postal Code <span>*</span></label>
+                    <input type="text" id="postalCode" placeholder="Enter postal code" required>
+                </div>
+                <div class="field-group">
+                    <label>Country <span>*</span></label>
+                    <select id="country" required>
+                        <option value="">Select country</option>
+                        <option value="India">India</option>
+                        <option value="United States">United States</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Australia">Australia</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-cancel" onclick="window.location.href='/employees'">
+                ✕ Cancel
+            </button>
+            <button type="submit" class="btn btn-save" id="saveBtn">
+                <i class="far fa-save"></i> 
+                <span id="saveText">Save Employee</span>
+                <div class="loading" id="saveSpinner"></div>
+            </button>
+        </div>
+    </form>
+
+    <script>
+        // Global variables
+        let authToken;
+        let departments = [];
+        let isEditMode = false;
+        let editEmployeeId = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            
+            // Check if we are in edit mode
+            editEmployeeId = localStorage.getItem('editEmployeeId');
+            if (editEmployeeId) {
+                isEditMode = true;
+                localStorage.removeItem('editEmployeeId'); // Clear it so next time is "Add"
+                document.getElementById('pageTitle').textContent = 'Edit Employee';
+                document.getElementById('breadcrumbText').textContent = 'Edit Employee';
+                document.getElementById('saveText').textContent = 'Update Employee';
+                
+                // Password fields are optional in edit mode
+                document.getElementById('password').required = false;
+                document.getElementById('confirmPassword').required = false;
+                document.getElementById('employeeId').readOnly = true;
+                document.getElementById('username').readOnly = true;
+            }
+
+            loadDepartments().then(() => {
+                if (isEditMode) {
+                    fetchEmployeeData(editEmployeeId);
+                }
+            });
+
+            setupPasswordToggles();
+            setupFormValidation();
+        });
+
+        // Fetch employee data for editing
+        async function fetchEmployeeData(id) {
+            try {
+                const response = await fetch(`/api/employees/${id}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const emp = data.employee;
+                    // Fill form
+                    document.getElementById('firstName').value = emp.first_name || '';
+                    document.getElementById('lastName').value = emp.last_name || '';
+                    document.getElementById('employeeId').value = emp.employee_id || '';
+                    document.getElementById('email').value = emp.email || '';
+                    document.getElementById('phone').value = emp.phone || '';
+                    document.getElementById('dateOfBirth').value = emp.date_of_birth ? emp.date_of_birth.split('T')[0] : '';
+                    document.getElementById('department').value = emp.department_id || '';
+                    document.getElementById('designation').value = emp.designation || '';
+                    document.getElementById('dateOfJoining').value = emp.date_of_joining ? emp.date_of_joining.split('T')[0] : '';
+                    document.getElementById('employeeType').value = emp.employee_type || 'permanent';
+                    document.getElementById('reportingManager').value = emp.reporting_manager || '';
+                    document.getElementById('workLocation').value = emp.work_location || '';
+                    document.getElementById('username').value = emp.username || '';
+                    document.getElementById('status').value = emp.status || 'active';
+                    document.getElementById('baseSalary').value = emp.base_salary || 0;
+                    document.getElementById('hourlyRate').value = emp.hourly_rate || 0;
+                    document.getElementById('addressLine1').value = emp.address_line1 || '';
+                    document.getElementById('addressLine2').value = emp.address_line2 || '';
+                    document.getElementById('city').value = emp.city || '';
+                    document.getElementById('state').value = emp.state || '';
+                    document.getElementById('postalCode').value = emp.postal_code || '';
+                    document.getElementById('country').value = emp.country || 'India';
+                }
+            } catch (error) {
+                console.error('Error fetching employee:', error);
+                showError('Failed to load employee data');
+            }
+        }
+
+        // Check authentication
+        function checkAuth() {
+            authToken = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+
+            if (!authToken) {
+                window.location.href = '/';
+                return;
+            }
+        }
+
+        // Load departments
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/employees/departments/all', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    departments = data.departments;
+                    const departmentSelect = document.getElementById('department');
+                    
+                    data.departments.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        departmentSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load departments:', error);
+            }
+        }
+
+        // Setup password toggles
+        function setupPasswordToggles() {
+            const togglePassword = document.getElementById('togglePassword');
+            const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.classList.toggle('fa-eye-slash');
+            });
+
+            toggleConfirmPassword.addEventListener('click', function() {
+                const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                confirmPasswordInput.setAttribute('type', type);
+                this.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // Setup form validation
+        function setupFormValidation() {
+            const form = document.getElementById('addEmployeeForm');
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (validateForm()) {
+                    await saveEmployee();
+                }
+            });
+        }
+
+        // Validate form
+        function validateForm() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const email = document.getElementById('email').value;
+
+            // Only validate password if it's entered or in "Add" mode
+            if (!isEditMode || password) {
+                // Check if passwords match
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match');
+                    return false;
+                }
+
+                // Check password length
+                if (password.length < 6) {
+                    showError('Password must be at least 6 characters long');
+                    return false;
+                }
+            }
+
+            // Check email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('Please enter a valid email address');
+                return false;
+            }
+
+            // Check required fields
+            const requiredFields = ['firstName', 'lastName', 'employeeId', 'email', 'phone', 'dateOfBirth', 'department', 'designation', 'dateOfJoining', 'employeeType', 'username', 'status', 'addressLine1', 'city', 'state', 'postalCode', 'country'];
+            
+            // Password is only required in add mode
+            if (!isEditMode) {
+                requiredFields.push('password', 'confirmPassword');
+            }
+            
+            for (const fieldId of requiredFields) {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    showError('Please fill in all required fields');
+                    field.focus();
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Save employee
+        async function saveEmployee() {
+            const saveBtn = document.getElementById('saveBtn');
+            const saveText = document.getElementById('saveText');
+            const saveSpinner = document.getElementById('saveSpinner');
+
+            // Show loading state
+            saveBtn.disabled = true;
+            saveText.style.display = 'none';
+            saveSpinner.style.display = 'inline-block';
+
+            // Hide alerts
+            hideAlerts();
+
+            try {
+                const password = document.getElementById('password').value;
+                const formData = {
+                    employee_id: document.getElementById('employeeId').value,
+                    first_name: document.getElementById('firstName').value,
+                    last_name: document.getElementById('lastName').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    department_id: document.getElementById('department').value,
+                    designation: document.getElementById('designation').value,
+                    date_of_birth: document.getElementById('dateOfBirth').value,
+                    date_of_joining: document.getElementById('dateOfJoining').value,
+                    employee_type: document.getElementById('employeeType').value,
+                    reporting_manager: document.getElementById('reportingManager').value,
+                    work_location: document.getElementById('workLocation').value,
+                    address_line1: document.getElementById('addressLine1').value,
+                    address_line2: document.getElementById('addressLine2').value,
+                    city: document.getElementById('city').value,
+                    state: document.getElementById('state').value,
+                    postal_code: document.getElementById('postalCode').value,
+                    country: document.getElementById('country').value,
+                    status: document.getElementById('status').value,
+                    username: document.getElementById('username').value,
+                    base_salary: document.getElementById('baseSalary').value,
+                    hourly_rate: document.getElementById('hourlyRate').value
+                };
+
+                if (password) {
+                    formData.password = password;
+                }
+
+                const url = isEditMode ? `/api/employees/${editEmployeeId}` : '/api/employees';
+                const method = isEditMode ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess(isEditMode ? 'Employee updated successfully!' : 'Employee added successfully!');
+                    
+                    // Redirect back to employees list after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = '/employees';
+                    }, 1500);
+                } else {
+                    showError(data.message || 'Failed to process request');
+                }
+            } catch (error) {
+                console.error('Save employee error:', error);
+                showError('Network error. Please try again.');
+            } finally {
+                // Hide loading state
+                saveBtn.disabled = false;
+                saveText.style.display = 'inline';
+                saveSpinner.style.display = 'none';
+            }
+        }
+
+        // Alert functions
+        function showError(message) {
+            const errorAlert = document.getElementById('errorAlert');
+            errorAlert.textContent = message;
+            errorAlert.style.display = 'block';
+            setTimeout(hideAlerts, 5000);
+        }
+
+        function showSuccess(message) {
+            const successAlert = document.getElementById('successAlert');
+            successAlert.textContent = message;
+            successAlert.style.display = 'block';
+            setTimeout(hideAlerts, 5000);
+        }
+
+        function hideAlerts() {
+            document.getElementById('errorAlert').style.display = 'none';
+            document.getElementById('successAlert').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

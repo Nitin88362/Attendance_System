@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Employee Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --sidebar-bg: #0a1931;
+            --active-blue: #2563eb;
+            --bg-light: #f8fafc;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .logo i { font-size: 1.8rem; color: #3b82f6; }
+        .logo span { font-weight: 700; font-size: 1.1rem; }
+
+        .nav-menu { list-style: none; flex-grow: 1; }
+        .nav-item {
+            padding: 12px 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #94a3b8;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: 0.3s;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--active-blue);
+            color: white;
+        }
+
+        .employee-profile-box {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 260px;
+            flex-grow: 1;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .user-meta { display: flex; align-items: center; gap: 20px; }
+        .date-chip { 
+            background: white; padding: 8px 15px; 
+            border-radius: 10px; border: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        /* PROFILE HEADER */
+        .profile-header {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .profile-avatar {
+            position: relative;
+        }
+
+        .avatar-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--active-blue);
+        }
+
+        .avatar-upload {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: var(--active-blue);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 3px solid white;
+        }
+
+        .profile-info h2 {
+            font-size: 1.8rem;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .profile-info p {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .profile-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: #e0e7ff; color: #4338ca; }
+        .badge-success { background: #dcfce7; color: #166534; }
+
+        /* PROFILE SECTIONS */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .profile-section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--active-blue);
+        }
+
+        /* INFO GRID */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        /* FORM */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            color: var(--text-dark); 
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--active-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            border: none;
+        }
+
+        .btn-primary { background: var(--active-blue); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        /* QUICK STATS */
+        .quick-stats {
+            display: grid;
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--active-blue);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* SECURITY */
+        .security-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .security-item:last-child {
+            border-bottom: none;
+        }
+
+        .security-info h4 {
+            font-size: 1rem;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .security-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">
+            <i class="fas fa-clock"></i>
+            <span>Employee <br>Attendance System</span>
+        </div>
+        <div class="nav-menu">
+            <a href="/employee-dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a href="/employee-attendance" class="nav-item"><i class="fas fa-calendar-check"></i> My Attendance</a>
+            <a href="/employee-leaves" class="nav-item"><i class="fas fa-calendar-minus"></i> My Leaves</a>
+            <a href="/employee-profile" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
+        </div>
+        <div class="employee-profile-box">
+            <img src="https://ui-avatars.com/api/?name=Employee&background=random" style="width: 40px; border-radius: 50%;">
+            <div>
+                <p style="font-size: 0.85rem; font-weight: 600;" id="employeeName">Employee</p>
+                <p style="font-size: 0.7rem; color: #94a3b8;" id="employeeId">EMP001</p>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="header">
+            <div>
+                <h1 style="font-size: 1.8rem; color: var(--text-dark);">My Profile</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Manage your personal information and account settings.</p>
+            </div>
+            <div class="user-meta">
+                <div class="date-chip"><i class="far fa-calendar-alt"></i> <span id="currentDate"></span></div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <img src="https://ui-avatars.com/api/?name=John+Doe&background=random&size=120" alt="Profile" class="avatar-img" id="profileAvatar">
+                <div class="avatar-upload" onclick="changeAvatar()">
+                    <i class="fas fa-camera"></i>
+                </div>
+            </div>
+            <div class="profile-info">
+                <h2 id="profileName">John Doe</h2>
+                <p id="profilePosition">Senior Developer • Development Team</p>
+                <div class="profile-badges">
+                    <span class="badge badge-primary">Active Employee</span>
+                    <span class="badge badge-success">2+ Years</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-grid">
+            <div>
+                <div class="profile-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-user"></i>
+                        Personal Information
+                    </h3>
+                    <form id="personalInfoForm">
+                        <div class="info-grid">
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" value="John" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" value="Doe" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" value="john.doe@company.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" value="+1 234 567 8900">
+                            </div>
+                            <div class="form-group">
+                                <label for="dob">Date of Birth</label>
+                                <input type="date" id="dob" value="1990-01-15">
+                            </div>
+                            <div class="form-group">
+                                <label for="gender">Gender</label>
+                                <select id="gender">
+                                    <option value="male" selected>Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 25px;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn" style="background: var(--text-muted); color: white;" onclick="resetPersonalInfo()">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-briefcase"></i>
+                        Work Information
+                    </h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Employee ID</span>
+                            <span class="info-value" id="empId">EMP001</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Department</span>
+                            <span class="info-value" id="department">Development</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Position</span>
+                            <span class="info-value" id="position">Senior Developer</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Joining Date</span>
+                            <span class="info-value" id="joiningDate">Jan 15, 2022</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Reporting Manager</span>
+                            <span class="info-value" id="manager">John Smith</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Work Location</span>
+                            <span class="info-value" id="location">Office - Main Building</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="profile-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        Quick Stats
+                    </h3>
+                    <div class="quick-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Working Days</div>
+                            <div class="stat-value" id="workingDays">485</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Attendance Rate</div>
+                            <div class="stat-value" id="attendanceRate">94.5%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Leaves Taken</div>
+                            <div class="stat-value" id="leavesTaken">12</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Projects Completed</div>
+                            <div class="stat-value" id="projectsCompleted">23</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-shield-alt"></i>
+                        Security Settings
+                    </h3>
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Change Password</h4>
+                            <p>Last changed 3 months ago</p>
+                        </div>
+                        <button class="btn btn-warning" onclick="changePassword()">
+                            <i class="fas fa-key"></i> Change
+                        </button>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Two-Factor Authentication</h4>
+                            <p>Add an extra layer of security</p>
+                        </div>
+                        <button class="btn btn-success" onclick="enable2FA()">
+                            <i class="fas fa-mobile-alt"></i> Enable
+                        </button>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Login History</h4>
+                            <p>View your recent login activity</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="viewLoginHistory()">
+                            <i class="fas fa-history"></i> View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Global variables
+        let authToken;
+        let currentUser;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            loadProfileData();
+        });
+
+        // Check authentication
+        function checkAuth() {
+            authToken = localStorage.getItem('employeeToken') || sessionStorage.getItem('employeeToken');
+            currentUser = JSON.parse(localStorage.getItem('employeeUser') || sessionStorage.getItem('employeeUser'));
+            const employeeId = localStorage.getItem('employeeId') || sessionStorage.getItem('employeeId');
+
+            if (!authToken || !currentUser || !employeeId) {
+                window.location.href = '/employee-login';
+                return;
+            }
+
+            // Update sidebar info
+            document.getElementById('employeeName').textContent = currentUser.first_name || 'Employee';
+            document.getElementById('employeeId').textContent = employeeId;
+        }
+
+        // Load profile data
+        async function loadProfileData() {
+            try {
+                const employeeId = localStorage.getItem('employeeId') || sessionStorage.getItem('employeeId');
+                const response = await fetch(`/api/employees/${employeeId}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const profileData = data.employee;
+
+                    // Update form fields
+                    document.getElementById('firstName').value = profileData.first_name;
+                    document.getElementById('lastName').value = profileData.last_name;
+                    document.getElementById('email').value = profileData.email;
+                    document.getElementById('phone').value = profileData.phone || '';
+                    document.getElementById('dob').value = profileData.date_of_birth ? profileData.date_of_birth.split('T')[0] : '';
+                    
+                    // Update work information
+                    document.getElementById('empId').textContent = profileData.employee_id;
+                    document.getElementById('department').textContent = profileData.department || 'IT Department';
+                    document.getElementById('position').textContent = profileData.designation || 'Employee';
+                    document.getElementById('joiningDate').textContent = formatDate(profileData.date_of_joining);
+
+                    // Update profile header
+                    document.getElementById('profileName').textContent = `${profileData.first_name} ${profileData.last_name}`;
+                    document.getElementById('profilePosition').textContent = `${profileData.designation || 'Employee'} • ${profileData.department || 'IT'} Team`;
+
+                    // Update avatar
+                    if (profileData.profile_image) {
+                        document.getElementById('profileAvatar').src = profileData.profile_image;
+                    } else {
+                        document.getElementById('profileAvatar').src = `https://ui-avatars.com/api/?name=${profileData.first_name}+${profileData.last_name}&background=random&size=120`;
+                    }
+
+                    // Load stats
+                    loadStats();
+                }
+            } catch (error) {
+                console.error('Failed to load profile data:', error);
+            }
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/dashboard/employee-stats', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    document.getElementById('workingDays').textContent = stats.monthly_attendance.total_days;
+                    document.getElementById('attendanceRate').textContent = stats.monthly_attendance.total_days > 0 ? 
+                        Math.round((stats.monthly_attendance.present_days / stats.monthly_attendance.total_days) * 100) + '%' : '0%';
+                    document.getElementById('leavesTaken').textContent = stats.leave_balance.used;
+                    document.getElementById('projectsCompleted').textContent = '2'; // Simplified
+                }
+            } catch (error) {
+                console.error('Failed to load employee stats:', error);
+            }
+        }
+
+        // Form submission
+        document.getElementById('personalInfoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                first_name: document.getElementById('firstName').value,
+                last_name: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                date_of_birth: document.getElementById('dob').value
+            };
+
+            try {
+                const response = await fetch('/api/employees/profile/update', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Update profile header
+                    document.getElementById('profileName').textContent = `${formData.first_name} ${formData.last_name}`;
+                    document.getElementById('employeeName').textContent = `${formData.first_name} ${formData.last_name}`;
+                    alert('Personal information updated successfully!');
+                } else {
+                    alert(data.message || 'Failed to update profile');
+                }
+            } catch (error) {
+                console.error('Update profile error:', error);
+                alert('Error updating profile');
+            }
+        });
+
+        // Reset personal info
+        function resetPersonalInfo() {
+            loadProfileData();
+        }
+
+        // Change avatar
+        function changeAvatar() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        const base64Image = event.target.result;
+                        try {
+                            const response = await fetch('/api/employees/profile/update', {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${authToken}`
+                                },
+                                body: JSON.stringify({ profile_image: base64Image })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                document.getElementById('profileAvatar').src = base64Image;
+                                alert('Profile picture updated successfully!');
+                            }
+                        } catch (error) {
+                            console.error('Error updating avatar:', error);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+
+        // Change password
+        function changePassword() {
+            alert('Password change functionality will be implemented here');
+        }
+
+        // Enable 2FA
+        function enable2FA() {
+            alert('Two-factor authentication setup will be implemented here');
+        }
+
+        // View login history
+        function viewLoginHistory() {
+            alert('Login history will be displayed here');
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // Update date and time
+        function updateDateTime() {
+            const now = new Date();
+            const dateString = now.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            });
+
+            document.getElementById('currentDate').textContent = dateString;
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('employeeToken');
+                localStorage.removeItem('employeeUser');
+                sessionStorage.removeItem('employeeToken');
+                sessionStorage.removeItem('employeeUser');
+                window.location.href = '/employee-login';
+            }
+        }
+    </script>
+</body>
+</html>

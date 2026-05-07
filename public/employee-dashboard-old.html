@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard | Attendance System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --sidebar: #0f172a;
+            --white: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--sidebar); color: white; display: flex; flex-direction: column; padding: 20px; transition: 0.3s; }
+        .logo { font-size: 1.2rem; font-weight: 700; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
+        .nav-item { padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; margin-bottom: 5px; color: #94a3b8; transition: 0.2s; text-decoration: none; }
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        .logout { margin-top: auto; color: #f87171; border-top: 1px solid #1e293b; padding-top: 20px; }
+
+        /* Main Content */
+        .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .user-meta { display: flex; align-items: center; gap: 15px; }
+        .user-meta img { width: 35px; height: 35px; border-radius: 50%; }
+
+        .content-area { padding: 30px; display: none; }
+        .content-area.active { display: block; }
+
+        /* Common Components */
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
+        .stat-box { display: flex; align-items: center; gap: 15px; background: white; padding: 20px; border-radius: 12px; }
+        .icon-circle { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+
+        /* Sections Specific */
+        .qr-box { text-align: center; border: 2px dashed var(--border); padding: 30px; border-radius: 15px; }
+        .qr-box img { width: 180px; margin-bottom: 15px; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .present { background: #dcfce7; color: #166534; }
+        .absent { background: #fee2e2; color: #991b1b; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+        td { padding: 12px; font-size: 0.85rem; border-bottom: 1px solid #f8fafc; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; }
+        .btn { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .user-meta { display: flex; align-items: center; gap: 20px; }
+        .date-chip { 
+            background: white; padding: 8px 15px; 
+            border-radius: 10px; border: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        /* CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .icon-wrap {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-card h3 { font-size: 1.8rem; color: var(--text-dark); }
+        .stat-card p { font-size: 0.85rem; color: var(--text-muted); }
+
+        /* PANELS */
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* TABLE */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; color: var(--text-muted); font-size: 0.85rem; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        td { padding: 15px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; color: var(--text-dark); }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status.present { background: #dcfce7; color: #166534; }
+        .status.absent { background: #fee2e2; color: #991b1b; }
+        .status.leave { background: #fef3c7; color: #92400e; }
+
+        /* ACTIONS */
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            border: none;
+        }
+
+        .btn-primary { background: var(--active-blue); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--active-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .action-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .action-card:hover {
+            border-color: var(--active-blue);
+            transform: translateY(-2px);
+        }
+
+        .action-card i {
+            font-size: 2rem;
+            color: var(--active-blue);
+            margin-bottom: 10px;
+        }
+
+        .action-card h4 {
+            font-size: 1rem;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .action-card p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo"><i class="fas fa-clock"></i> Attendance System</div>
+        <a href="#" class="nav-item active" onclick="showSection('dashboard')"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="#" class="nav-item" onclick="showSection('scan')"><i class="fas fa-qrcode"></i> Scan Attendance</a>
+        <a href="#" class="nav-item" onclick="showSection('my-attendance')"><i class="fas fa-calendar-alt"></i> My Attendance</a>
+        <a href="#" class="nav-item" onclick="showSection('leave')"><i class="fas fa-envelope-open-text"></i> Leave Request</a>
+        <a href="#" class="nav-item" onclick="showSection('salary')"><i class="fas fa-wallet"></i> My Salary</a>
+        <a href="#" class="nav-item" onclick="showSection('profile')"><i class="fas fa-user"></i> Profile</a>
+        <a href="#" class="nav-item logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h3>Welcome back, Nitin Kumar 👋</h3>
+            <div class="user-meta">
+                <span>21 May 2024, Tuesday</span>
+                <img src="https://i.pravatar.cc/150?u=nitin" alt="user">
+                <div><strong>Nitin Kumar</strong><br><small>Employee</small></div>
+            </div>
+        </div>
+
+        <div class="loading" id="loadingSpinner">
+            <div class="spinner"></div>
+            Loading dashboard...
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+            <div class="quick-actions">
+                <div class="action-card" onclick="checkIn()">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <h4>Check In</h4>
+                    <p>Mark your attendance</p>
+                </div>
+                <div class="action-card" onclick="checkOut()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <h4>Check Out</h4>
+                    <p>End your work day</p>
+                </div>
+                <div class="action-card" onclick="applyLeave()">
+                    <i class="fas fa-calendar-plus"></i>
+                    <h4>Apply Leave</h4>
+                    <p>Request time off</p>
+                </div>
+                <div class="action-card" onclick="viewProfile()">
+                    <i class="fas fa-user"></i>
+                    <h4>My Profile</h4>
+                    <p>View personal info</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon-wrap" style="background: #dcfce7; color: #15803d;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <p>Days Present</p>
+                        <h3 id="daysPresent">0</h3>
+                        <p>This Month</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-wrap" style="background: #fee2e2; color: #b91c1c;">
+                        <i class="fas fa-user-times"></i>
+                    </div>
+                    <div>
+                        <p>Days Absent</p>
+                        <h3 id="daysAbsent">0</h3>
+                        <p>This Month</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-wrap" style="background: #fef3c7; color: #b45309;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <p>Total Hours</p>
+                        <h3 id="totalHours">0</h3>
+                        <p>This Month</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-wrap" style="background: #e0e7ff; color: #4338ca;">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div>
+                        <p>Leave Balance</p>
+                        <h3 id="leaveBalance">24</h3>
+                        <p>Days Remaining</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h4 style="color: var(--text-dark);">Recent Attendance</h4>
+                    <button class="btn btn-primary" onclick="viewFullAttendance()">
+                        <i class="fas fa-list"></i> View Full
+                    </button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Working Hours</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTable">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h4 style="color: var(--text-dark);">Recent Leave Requests</h4>
+                    <button class="btn btn-primary" onclick="applyLeave()">
+                        <i class="fas fa-plus"></i> New Request
+                    </button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Leave Type</th>
+                            <th>From Date</th>
+                            <th>To Date</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leavesTable">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Global variables
+        let authToken;
+        let currentUser;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // Setup navigation handlers
+            setupNavigationHandlers();
+        });
+
+        // Setup navigation handlers
+        function setupNavigationHandlers() {
+            console.log('Setting up navigation handlers...');
+            const navItems = document.querySelectorAll('.nav-item');
+            console.log('Found nav items:', navItems.length);
+            
+            navItems.forEach((item, index) => {
+                console.log(`Setting up nav item ${index}:`, item.textContent.trim());
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Clicked nav item:', this.textContent.trim());
+                    
+                    // Remove active class from all items
+                    document.querySelectorAll('.nav-item').forEach(navItem => {
+                        navItem.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    console.log('Added active class to:', this.textContent.trim());
+                    
+                    // Handle navigation based on data-page attribute
+                    const page = this.getAttribute('data-page');
+                    console.log('Data page:', page);
+                    
+                    if (page === 'dashboard') {
+                        // Already on dashboard, just refresh content
+                        loadDashboardData();
+                    } else if (page === 'attendance') {
+                        alert('My Attendance page will be implemented here');
+                    } else if (page === 'leaves') {
+                        alert('My Leaves page will be implemented here');
+                    } else if (page === 'profile') {
+                        alert('Profile page will be implemented here');
+                    }
+                });
+            });
+        }
+
+        // Check authentication
+        function checkAuth() {
+            authToken = localStorage.getItem('employeeToken') || sessionStorage.getItem('employeeToken');
+            currentUser = JSON.parse(localStorage.getItem('employeeUser') || sessionStorage.getItem('employeeUser'));
+
+            if (!authToken || !currentUser) {
+                window.location.href = '/employee-login';
+                return;
+            }
+
+            // Update employee info
+            document.getElementById('employeeName').textContent = currentUser.first_name || 'Employee';
+            document.getElementById('employeeId').textContent = currentUser.employee_id || 'EMP001';
+            
+            // Load dashboard data
+            loadDashboardData();
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard/employee-stats', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateDashboardStats(data.stats);
+                    loadRecentAttendance();
+                    loadRecentLeaves();
+                    
+                    // Hide loading and show content
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    document.getElementById('dashboardContent').style.display = 'block';
+                } else {
+                    console.error('Failed to load dashboard data');
+                }
+            } catch (error) {
+                console.error('Dashboard loading error:', error);
+                document.getElementById('loadingSpinner').innerHTML = '<p>Error loading dashboard. Please refresh.</p>';
+            }
+        }
+
+        // Update dashboard statistics
+        function updateDashboardStats(stats) {
+            const monthly = stats.monthly_attendance;
+            
+            document.getElementById('daysPresent').textContent = monthly.present_days || 0;
+            document.getElementById('daysAbsent').textContent = monthly.absent_days || 0;
+            document.getElementById('totalHours').textContent = (monthly.total_hours || 0).toFixed(1);
+            document.getElementById('leaveBalance').textContent = stats.leave_balance.remaining;
+        }
+
+        // Load recent attendance
+        async function loadRecentAttendance() {
+            try {
+                const response = await fetch(`/api/attendance/employee/${currentUser.employee_id}?limit=5`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateAttendanceTable(data.attendance);
+                }
+            } catch (error) {
+                console.error('Failed to load attendance:', error);
+            }
+        }
+
+        // Load recent leaves
+        async function loadRecentLeaves() {
+            try {
+                const response = await fetch(`/api/leaves/employee/${currentUser.employee_id}?limit=5`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateLeavesTable(data.leaves);
+                }
+            } catch (error) {
+                console.error('Failed to load leaves:', error);
+            }
+        }
+
+        // Update attendance table
+        function updateAttendanceTable(attendance) {
+            const tableBody = document.getElementById('attendanceTable');
+            tableBody.innerHTML = '';
+
+            if (attendance.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No attendance records found</td></tr>';
+                return;
+            }
+
+            attendance.forEach(record => {
+                const row = `
+                    <tr>
+                        <td>${formatDate(record.date)}</td>
+                        <td>${record.check_in || '--'}</td>
+                        <td>${record.check_out || '--'}</td>
+                        <td>${record.working_hours ? record.working_hours + 'h' : '--'}</td>
+                        <td><span class="status ${record.status}">${record.status.charAt(0).toUpperCase() + record.status.slice(1)}</span></td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // Update leaves table
+        function updateLeavesTable(leaves) {
+            const tableBody = document.getElementById('leavesTable');
+            tableBody.innerHTML = '';
+
+            if (leaves.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No leave requests found</td></tr>';
+                return;
+            }
+
+            leaves.forEach(leave => {
+                const row = `
+                    <tr>
+                        <td>${leave.leave_type.charAt(0).toUpperCase() + leave.leave_type.slice(1)}</td>
+                        <td>${formatDate(leave.from_date)}</td>
+                        <td>${formatDate(leave.to_date)}</td>
+                        <td>${leave.days}</td>
+                        <td><span class="status ${leave.status}">${leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}</span></td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // Check in function
+        async function checkIn() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                
+                const response = await fetch('/api/attendance/checkin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        employee_id: currentUser.employee_id,
+                        date: today
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Check-in successful!');
+                    loadRecentAttendance();
+                } else {
+                    alert(data.message || 'Check-in failed');
+                }
+            } catch (error) {
+                console.error('Check-in error:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Check out function
+        async function checkOut() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                
+                const response = await fetch('/api/attendance/checkout', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        employee_id: currentUser.employee_id,
+                        date: today
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Check-out successful!');
+                    loadRecentAttendance();
+                } else {
+                    alert(data.message || 'Check-out failed');
+                }
+            } catch (error) {
+                console.error('Check-out error:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Apply leave function
+        function applyLeave() {
+            alert('Leave application form will be implemented here');
+        }
+
+        // View profile function
+        function viewProfile() {
+            alert('Profile section will be implemented here');
+        }
+
+        // View full attendance
+        function viewFullAttendance() {
+            alert('Full attendance view will be implemented here');
+        }
+
+        // Update date and time
+        function updateDateTime() {
+            const now = new Date();
+            const dateString = now.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            });
+
+            document.getElementById('currentDate').textContent = dateString;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('employeeToken');
+                localStorage.removeItem('employeeUser');
+                sessionStorage.removeItem('employeeToken');
+                sessionStorage.removeItem('employeeUser');
+                window.location.href = '/employee-login';
+            }
+        }
+
+        // Refresh data every 30 seconds
+        setInterval(loadDashboardData, 30000);
+    </script>
+</body>
+</html>
