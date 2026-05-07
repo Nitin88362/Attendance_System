@@ -67,7 +67,7 @@ router.get('/', authenticateToken, async (req, res) => {
         const [countResult] = await pool.execute(`
             SELECT COUNT(*) as total 
             FROM attendance a 
-            JOIN employees e ON a.employee_id = e.employee_id 
+            JOIN employees e ON a.employee_id = e.id 
             LEFT JOIN departments d ON e.department_id = d.id 
             ${whereClause}
         `, params);
@@ -82,12 +82,12 @@ router.get('/', authenticateToken, async (req, res) => {
                 d.name as department_name,
                 e.designation
             FROM attendance a 
-            JOIN employees e ON a.employee_id = e.employee_id 
+            JOIN employees e ON a.employee_id = e.id 
             LEFT JOIN departments d ON e.department_id = d.id 
             ${whereClause}
             ORDER BY a.date DESC, e.first_name ASC
-            LIMIT ? OFFSET ?
-        `, [...params, limitValue, offsetValue]);
+            LIMIT ${limitValue} OFFSET ${offsetValue}
+        `, params);
 
         res.json({
             success: true,
@@ -543,7 +543,7 @@ router.get("/employee/:employeeId/today", async (req, res) => {
     const [rows] = await pool.execute(
       `SELECT a.*, e.first_name, e.last_name, e.employee_id
        FROM attendance a
-       JOIN employees e ON a.employee_id = e.employee_id
+       JOIN employees e ON a.employee_id = e.id
        WHERE a.employee_id = ?
        AND DATE(a.check_in) = CURDATE()
        ORDER BY a.check_in DESC`,
