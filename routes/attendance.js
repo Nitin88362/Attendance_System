@@ -123,7 +123,7 @@ router.post('/checkin', authenticateToken, [
         }
 
         const { employee_id, date } = req.body;
-        const currentTime = moment().format('HH:mm:ss');
+        const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
 
         // Check if attendance already exists for today
         const [existing] = await pool.execute(
@@ -175,7 +175,7 @@ router.put('/checkout', authenticateToken, [
         }
 
         const { employee_id, date } = req.body;
-        const currentTime = moment().format('HH:mm:ss');
+        const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
 
         // Check if check-in exists
         const [existing] = await pool.execute(

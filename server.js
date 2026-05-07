@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 require('dotenv').config();
 
+const db = require('./config/database');
+
 const app = express();
 
 // Middleware
@@ -23,6 +25,10 @@ const leaveRoutes = require('./routes/leaves');
 const dashboardRoutes = require('./routes/dashboard');
 const qrScannerRoutes = require('./routes/qr-scanner');
 const salaryRoutes = require('./routes/salary');
+
+// Initialize database on startup
+const initDatabase = require('./scripts/init-database');
+initDatabase();
 
 // API Routes
 app.use('/api/auth', authRoutes);
