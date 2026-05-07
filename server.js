@@ -9,17 +9,25 @@ const db = require('./config/database');
 
 const app = express();
 
-// Create active column if not exists
-db.query(`
-ALTER TABLE employees
-ADD COLUMN IF NOT EXISTS active TINYINT(1) DEFAULT 1
-`, (err) => {
-    if (err) {
-        console.log("Column check:", err.message);
+// Fix database columns
+async function fixDatabase() {
+  try {
+    await db.query(`
+      ALTER TABLE employees
+      ADD COLUMN active TINYINT(1) DEFAULT 1
+    `);
+
+    console.log("✅ active column created");
+  } catch (err) {
+    if (err.message.includes("Duplicate column")) {
+      console.log("✅ active column already exists");
     } else {
-        console.log("✅ Active column ready");
+      console.log("❌ active column error:", err.message);
     }
-});
+  }
+}
+
+fixDatabase();
 
 // Middleware
 app.use(cors());
