@@ -272,25 +272,25 @@ router.get('/today/summary', async (req, res) => {
 
         // Present today
         const [presentResult] = await pool.execute(
-            'SELECT COUNT(*) as present FROM attendance WHERE DATE(check_in) = ? AND status = "present"',
+            'SELECT COUNT(*) as present FROM attendance WHERE DATE(check_in) = ? AND status = \'present\'',
             [today]
         );
 
         // Absent today
         const [absentResult] = await pool.execute(
-            'SELECT COUNT(*) as absent FROM attendance WHERE DATE(check_in) = ? AND status = "absent"',
+            'SELECT COUNT(*) as absent FROM attendance WHERE DATE(check_in) = ? AND status = \'absent\'',
             [today]
         );
 
         // On leave today
         const [leaveResult] = await pool.execute(
-            'SELECT COUNT(*) as on_leave FROM attendance WHERE DATE(check_in) = ? AND status = "leave"',
+            'SELECT COUNT(*) as on_leave FROM attendance WHERE DATE(check_in) = ? AND status = \'leave\'',
             [today]
         );
 
         // Total employees
         const [totalResult] = await pool.execute(
-            'SELECT COUNT(*) as total FROM employees WHERE status = "active"'
+            'SELECT COUNT(*) as total FROM employees WHERE status = \'active\''
         );
 
         const totalEmployees = totalResult[0].total;

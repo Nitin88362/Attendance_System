@@ -7,74 +7,56 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
 // Get all employees
-router.get('/', authenticateToken, async (req, res) => {
-    try {
-        const { page = 1, limit = 10, search = '', department = '', status = '' } = req.query;
-        const offset = (page - 1) * limit;
+router.get("/", async (req, res) => {
+  try {
+    const { search, department, status } = req.query;
 
-        let whereClause = 'WHERE 1=1';
-        let params = [];
+    const currentPage = parseInt(req.query.page) || 1;
+    const limitValue = parseInt(req.query.limit) || 20;
+    const offsetValue = (currentPage - 1) * limitValue;
 
-        if (search) {
-            whereClause += ' AND (e.employee_id LIKE ? OR e.first_name LIKE ? OR e.last_name LIKE ? OR e.email LIKE ?)';
-            const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-        }
+    let query = `
+      SELECT e.*, d.name as department_name
+      FROM employees e
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE 1=1
+    `;
 
-        if (department) {
-            whereClause += ' AND d.name = ?';
-            params.push(department);
-        }
+    let params = [];
 
-        if (status) {
-            whereClause += ' AND e.active = ?';
-            params.push(status === 'active' ? 1 : 0);
-        }
-
-        // Get total count
-        const [countResult] = await pool.execute(`
-            SELECT COUNT(*) as total 
-            FROM employees e 
-            LEFT JOIN departments d ON e.department_id = d.id 
-            ${whereClause}
-        `, params);
-
-        // Get employees
-        const currentPage = parseInt(req.query.page) || 1;
-        const limitValue = parseInt(req.query.limit) || 20;
-        const offsetValue = (currentPage - 1) * limitValue;
-
-        query += ` ORDER BY e.created_at DESC LIMIT ${limitValue} OFFSET ${offsetValue}`;
-
-        console.log("Employees Query:", query);
-        console.log("Params:", params);
-
-        const [employees] = await db.query(query, params);
-
-        // Remove passwords from response
-        const employeesWithoutPasswords = employees.map(emp => {
-            const { password, ...employee } = emp;
-            return employee;
-        });
-
-        res.json({
-            success: true,
-            employees: employeesWithoutPasswords,
-            pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
-                total: countResult[0].total,
-                pages: Math.ceil(countResult[0].total / limit)
-            }
-        });
-
-    } catch (error) {
-        console.error('Get employees error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
+    if (search) {
+      query += ` AND (e.name LIKE ? OR e.employee_id LIKE ? OR e.email LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
+
+    if (department) {
+      query += ` AND e.department_id = ?`;
+      params.push(department);
+    }
+
+    if (status === "active") {
+      query += ` AND e.active = 1`;
+    }
+
+    if (status === "inactive") {
+      query += ` AND e.active = 0`;
+    }
+
+    query += ` ORDER BY e.created_at DESC LIMIT ${limitValue} OFFSET ${offsetValue}`;
+
+    const [employees] = await db.query(query, params);
+
+    res.json({
+      success: true,
+      data: employees
+    });
+  } catch (error) {
+    console.log("Get employees error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
 });
 
 // Get employee by ID
