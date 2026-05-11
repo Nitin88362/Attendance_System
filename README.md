@@ -294,3 +294,5 @@ This project is licensed under the MIT License.
 ---
 
 **Note**: This is a comprehensive attendance management system suitable for small to medium-sized organizations. For enterprise deployments, consider additional security measures and scalability improvements.
+#   A t t e n d a n c e _ S y s t e m -  
+ 
